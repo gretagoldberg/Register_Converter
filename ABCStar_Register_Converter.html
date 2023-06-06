@@ -44,15 +44,15 @@ var defaults = {
 //Register Descriptions
 var RegDesc =  ["Register(s):Description",
 		"0:Special (RW)",
-		"1-4,6-7:Analog and DCS (RW)",
-		"16-23:Input (Mask) (RW)",
-		"32-38:Configuration (RW)",
-		"48-52:Status (RO)",
-		"63: High priority (RO)",
-		"64-95:TrimDAC 4 LSBs (RW)",
-		"96-103:TrimDac MSBs (RW)",
-		"104-111:Calibration Pulse Enables (RW)",
-		"112-175:Hit Counts (RO)" 
+		"1-3:Analog and DCS (RW)",
+		"10-17:Input (Mask) (RW)",
+		"20-2F:Configuration (RW)",
+		"30-3E:Status (RO)",
+		"3F: High priority (RO)",//3F??
+		"40-5F:TrimDAC 4 LSBs (RW)",
+		"60-67:TrimDac MSBs (RW)", 
+		"68-6F:Calibration Pulse Enables (RW)",
+		"80_BF:Hit Counts (RO)" 
 		];
 
 window.onload = function() {
