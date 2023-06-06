@@ -1,0 +1,785 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+
+<script src="http://www.google-analytics.com/urchin.js"
+type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-67976-1";
+urchinTracker();
+</script>
+
+<title>HCCStar</title>
+<style>
+.right {
+	float:right;
+}
+.left {
+	float:left;
+}
+.line {
+	border-left: 3px solid black;
+	height: 670px;
+	margin-right: 10px;
+	margin-left: 10px;
+}
+</style>
+
+<script>
+
+//Default signals
+var defaults = {
+	Reg0:0,Reg1:0,Reg2:0,Reg3:0,Reg4:0,Reg5:0,Reg6:0,Reg15:0,Reg16:0,Reg17:0xf000000,Reg31:0,Reg32:0,
+Reg33:0,Reg34:0,Reg35:0x00ff3b05,Reg36:0,Reg37:0x4,Reg38:0,Reg39:0x14,Reg40:0,Reg41:0x20001,Reg42:0x20001,Reg43:0,Reg44:0x18e,Reg45:0,Reg46:0,
+Reg47:0,Reg48:0x6600
+
+};
+
+//Register Descriptions
+var RegDesc =  ["Register(s):Description",
+		"0-2:SEU 1-3 (RO)",
+		"3:FrameRaw (RO)",
+		"4:LCB error (RO)",
+		"5:ADC Status (RO)",
+		"6:Status (RO)",
+		"15:High Priority (RO)",
+		"16:Pulse (WO)",
+		"17:Addressing (Fuse)",
+		"32-34:Delay 1-3 (RW)",
+		"35-37:PLL 1-3 (RW)",
+		"38-39:DRV 1-2 (RW)",
+		"40:ICenable (RW)",
+		"41,42:OPmode (RW)",
+		"43-44:Config 1-2 (RW)",
+		"45,46:ExtRst (RW)",
+		"47:Error Config (RW)",
+		"48:ADC Config (RW)"
+		];
+
+window.onload = function() {
+	var outdiv = document.getElementById('rightHalf');
+	var regdiv = document.getElementById('reg');
+	var descdiv = document.getElementById('desc');
+	for (var i=0;i<RegDesc.length;i++) {
+		
+		descdiv.appendChild(document.createTextNode(RegDesc[i].split(':')[1]));
+		descdiv.appendChild(document.createElement('br'));
+		regdiv.appendChild(document.createTextNode(RegDesc[i].split(':')[0]));
+		regdiv.appendChild(document.createElement('br'));
+		
+		if (i==0) {descdiv.appendChild(document.createElement('hr'));regdiv.appendChild(document.createElement('hr'));}
+	}
+};
+
+
+//Maximum signal (for length testing)
+var max_test = 0xffffffff;
+
+//Namespace of register constructors
+var Registers = {
+
+Reg0 : function(sig) {
+	this.HPR_State_SEU = {value:(sig>>31)&1,type:'binput',n:1};
+	this.HPR_Counter_SEU = {value:(sig>>30),type:'binput',n:1};
+	this.R3L1_decoder_SEU = {value:(sig>>21)&3,type:'binput',n:2};
+	this.LCB_decoder_SEU = {value:(sig>>17)&0xf,type:'binput',n:4};
+	this.Reg_47_SEU = {value:(sig>>16)&1,type:'binput',n:1};
+	this.Reg_46_SEU = {value:(sig>>15)&1,type:'binput',n:1};
+	this.Reg_45_SEU = {value:(sig>>14)&1,type:'binput',n:1};
+	this.Reg_44_SEU = {value:(sig>>13)&1,type:'binput',n:1};
+	this.Reg_43_SEU = {value:(sig>>12)&1,type:'binput',n:1};
+	this.Reg_42_SEU = {value:(sig>>11)&1,type:'binput',n:1};
+	this.Reg_41_SEU = {value:(sig>>10)&1,type:'binput',n:1};
+	this.Reg_40_SEU = {value:(sig>>9)&1,type:'binput',n:1};
+	this.Reg_39_SEU = {value:(sig>>8)&1,type:'binput',n:1};
+	this.Reg_38_SEU = {value:(sig>>7)&1,type:'binput',n:1};
+	this.Reg_37_SEU = {value:(sig>>6)&1,type:'binput',n:1};
+	this.Reg_36_SEU = {value:(sig>>5)&1,type:'binput',n:1};
+	this.Reg_35_SEU = {value:(sig>>4)&1,type:'binput',n:1};
+	this.Reg_34_SEU = {value:(sig>>3)&1,type:'binput',n:1};
+	this.Reg_33_SEU = {value:(sig>>2)&1,type:'binput',n:1};
+	this.Reg_32_SEU = {value:(sig>>1)&1,type:'binput',n:1};
+	this.Reg_17_SEU = {value:(sig>>0)&1,type:'binput',n:1};
+	this.HPR_State_SEU.text = "SEU in HPR Logic State Machine: " + bin_string(this.HPR_State_SEU.value,1);
+	this.HPR_Counter_SEU.text = "SEU in HPR Counter: " + bin_string(this.HPR_Counter_SEU.value,1);
+	this.R3L1_decoder_SEU = "SEU in various R3L1 decoder parts: " + bin_string(this.R3L1_decoder_SEU.value,2);
+	this.LCB_decoder_SEU = "SEU in various LCB decoder parts: " + bin_string(this.LCB_decoder_SEU.value,4);
+	this.Reg_47_SEU = "SEU in Register 47: " + bin_string(this.Reg_47_SEU.value,1);
+	this.Reg_46_SEU = "SEU in Register 46: " + bin_string(this.Reg_46_SEU.value,1);
+	this.Reg_45_SEU = "SEU in Register 45: " + bin_string(this.Reg_45_SEU.value,1);
+	this.Reg_44_SEU = "SEU in Register 44: " + bin_string(this.Reg_44_SEU.value,1);
+	this.Reg_43_SEU = "SEU in Register 43: " + bin_string(this.Reg_43_SEU.value,1);
+	this.Reg_42_SEU = "SEU in Register 42: " + bin_string(this.Reg_42_SEU.value,1);
+	this.Reg_41_SEU = "SEU in Register 41: " + bin_string(this.Reg_41_SEU.value,1);
+	this.Reg_40_SEU = "SEU in Register 40: " + bin_string(this.Reg_40_SEU.value,1);
+	this.Reg_39_SEU = "SEU in Register 39: " + bin_string(this.Reg_39_SEU.value,1);
+	this.Reg_38_SEU = "SEU in Register 38: " + bin_string(this.Reg_38_SEU.value,1);
+	this.Reg_37_SEU = "SEU in Register 37: " + bin_string(this.Reg_37_SEU.value,1);
+	this.Reg_36_SEU = "SEU in Register 36: " + bin_string(this.Reg_36_SEU.value,1);
+	this.Reg_35_SEU = "SEU in Register 35: " + bin_string(this.Reg_35_SEU.value,1);
+	this.Reg_34_SEU = "SEU in Register 34: " + bin_string(this.Reg_34_SEU.value,1);
+	this.Reg_33_SEU = "SEU in Register 33: " + bin_string(this.Reg_33_SEU.value,1);
+	this.Reg_32_SEU = "SEU in Register 32: " + bin_string(this.Reg_32_SEU.value,1);
+	this.Reg_17_SEU = "SEU in Register 17: " + bin_string(this.Reg_17_SEU.value,1);
+},
+Reg1 : function(sig) {
+	this.unused1 = {value:(sig>>27)&0x1f,type:'unused'};
+	this.ic_10_lp_uce = {value:(sig>>26)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_9_lp_uce = {value:(sig>>25)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_8_lp_uce = {value:(sig>>24)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_7_lp_uce = {value:(sig>>23)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_6_lp_uce = {value:(sig>>22)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_5_lp_uce = {value:(sig>>21)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_4_lp_uce = {value:(sig>>20)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_3_lp_uce = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_2_lp_uce = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_1_lp_uce = {value:(sig>>17)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_0_lp_uce = {value:(sig>>16)&1,type:'checkbox',checked:1,unchecked:0};
+	this.unused2 = {value:(sig>>11)&0x1f,type:'unused'};
+	this.ic_10_lp_ce = {value:(sig>>10)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_9_lp_ce = {value:(sig>>9)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_8_lp_ce = {value:(sig>>8)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_7_lp_ce = {value:(sig>>7)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_6_lp_ce = {value:(sig>>6)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_5_lp_ce = {value:(sig>>5)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_4_lp_ce = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_3_lp_ce = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_2_lp_ce = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_1_lp_ce = {value:(sig>>1)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_0_lp_ce = {value:(sig>>0)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_10_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 10: " + ((this.ic_10_lp_uce.value==this.ic_10_lp_uce.checked)?'Yes':'No');
+	this.ic_9_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 9: " + ((this.ic_9_lp_uce.value==this.ic_9_lp_uce.checked)?'Yes':'No');
+	this.ic_8_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 8: " + ((this.ic_8_lp_uce.value==this.ic_8_lp_uce.checked)?'Yes':'No');
+	this.ic_7_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 7: " + ((this.ic_7_lp_uce.value==this.ic_7_lp_uce.checked)?'Yes':'No');
+	this.ic_6_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 6: " + ((this.ic_6_lp_uce.value==this.ic_6_lp_uce.checked)?'Yes':'No');
+	this.ic_5_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 5: " + ((this.ic_5_lp_uce.value==this.ic_5_lp_uce.checked)?'Yes':'No');
+	this.ic_4_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 4: " + ((this.ic_4_lp_uce.value==this.ic_4_lp_uce.checked)?'Yes':'No');
+	this.ic_3_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 3: " + ((this.ic_3_lp_uce.value==this.ic_3_lp_uce.checked)?'Yes':'No');
+	this.ic_2_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 2: " + ((this.ic_2_lp_uce.value==this.ic_2_lp_uce.checked)?'Yes':'No');
+	this.ic_1_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 1: " + ((this.ic_1_lp_uce.value==this.ic_1_lp_uce.checked)?'Yes':'No');
+	this.ic_0_lp_uce.text = "Uncorrectable error in ABC LP packet metadata IC 0: " + ((this.ic_0_lp_uce.value==this.ic_0_lp_uce.checked)?'Yes':'No');
+	this.ic_10_lp_ce.text = "Correctable error in ABC LP packet metadata IC 10: " + ((this.ic_10_lp_ce.value==this.ic_10_lp_ce.checked)?'Yes':'No');
+	this.ic_9_lp_ce.text = "Correctable error in ABC LP packet metadata IC 9: " + ((this.ic_9_lp_ce.value==this.ic_9_lp_ce.checked)?'Yes':'No');
+	this.ic_8_lp_ce.text = "Correctable error in ABC LP packet metadata IC 8: " + ((this.ic_8_lp_ce.value==this.ic_8_lp_ce.checked)?'Yes':'No');
+	this.ic_7_lp_ce.text = "Correctable error in ABC LP packet metadata IC 7: " + ((this.ic_7_lp_ce.value==this.ic_7_lp_ce.checked)?'Yes':'No');
+	this.ic_6_lp_ce.text = "Correctable error in ABC LP packet metadata IC 6: " + ((this.ic_6_lp_ce.value==this.ic_6_lp_ce.checked)?'Yes':'No');
+	this.ic_5_lp_ce.text = "Correctable error in ABC LP packet metadata IC 5: " + ((this.ic_5_lp_ce.value==this.ic_5_lp_ce.checked)?'Yes':'No');
+	this.ic_4_lp_ce.text = "Correctable error in ABC LP packet metadata IC 4: " + ((this.ic_4_lp_ce.value==this.ic_4_lp_ce.checked)?'Yes':'No');
+	this.ic_3_lp_ce.text = "Correctable error in ABC LP packet metadata IC 3: " + ((this.ic_3_lp_ce.value==this.ic_3_lp_ce.checked)?'Yes':'No');
+	this.ic_2_lp_ce.text = "Correctable error in ABC LP packet metadata IC 2: " + ((this.ic_2_lp_ce.value==this.ic_2_lp_ce.checked)?'Yes':'No');
+	this.ic_1_lp_ce.text = "Correctable error in ABC LP packet metadata IC 1: " + ((this.ic_1_lp_ce.value==this.ic_1_lp_ce.checked)?'Yes':'No');
+	this.ic_0_lp_ce.text = "Correctable error in ABC LP packet metadata IC 0: " + ((this.ic_0_lp_ce.value==this.ic_0_lp_ce.checked)?'Yes':'No');
+},
+Reg2 : function(sig) {
+	this.unused1 = {value:(sig>>27)&0x1f,type:'unused'};
+	this.ic_10_pr_uce = {value:(sig>>26)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_9_pr_uce = {value:(sig>>25)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_8_pr_uce = {value:(sig>>24)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_7_pr_uce = {value:(sig>>23)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_6_pr_uce = {value:(sig>>22)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_5_pr_uce = {value:(sig>>21)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_4_pr_uce = {value:(sig>>20)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_3_pr_uce = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_2_pr_uce = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_1_pr_uce = {value:(sig>>17)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_0_pr_uce = {value:(sig>>16)&1,type:'checkbox',checked:1,unchecked:0};
+	this.unused2 = {value:(sig>>11)&0x1f,type:'unused'};
+	this.ic_10_pr_ce = {value:(sig>>10)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_9_pr_ce = {value:(sig>>9)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_8_pr_ce = {value:(sig>>8)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_7_pr_ce = {value:(sig>>7)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_6_pr_ce = {value:(sig>>6)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_5_pr_ce = {value:(sig>>5)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_4_pr_ce = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_3_pr_ce = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_2_pr_ce = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_1_pr_ce = {value:(sig>>1)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_0_pr_ce = {value:(sig>>0)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ic_10_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 10: " + ((this.ic_10_pr_uce.value==this.ic_10_pr_uce.checked)?'Yes':'No');
+	this.ic_9_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 9: " + ((this.ic_9_pr_uce.value==this.ic_9_pr_uce.checked)?'Yes':'No');
+	this.ic_8_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 8: " + ((this.ic_8_pr_uce.value==this.ic_8_pr_uce.checked)?'Yes':'No');
+	this.ic_7_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 7: " + ((this.ic_7_pr_uce.value==this.ic_7_pr_uce.checked)?'Yes':'No');
+	this.ic_6_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 6: " + ((this.ic_6_pr_uce.value==this.ic_6_pr_uce.checked)?'Yes':'No');
+	this.ic_5_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 5: " + ((this.ic_5_pr_uce.value==this.ic_5_pr_uce.checked)?'Yes':'No');
+	this.ic_4_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 4: " + ((this.ic_4_pr_uce.value==this.ic_4_pr_uce.checked)?'Yes':'No');
+	this.ic_3_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 3: " + ((this.ic_3_pr_uce.value==this.ic_3_pr_uce.checked)?'Yes':'No');
+	this.ic_2_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 2: " + ((this.ic_2_pr_uce.value==this.ic_2_pr_uce.checked)?'Yes':'No');
+	this.ic_1_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 1: " + ((this.ic_1_pr_uce.value==this.ic_1_pr_uce.checked)?'Yes':'No');
+	this.ic_0_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 0: " + ((this.ic_0_pr_uce.value==this.ic_0_pr_uce.checked)?'Yes':'No');
+	this.ic_10_pr_ce.text = "Correctable error in ABC PR packet metadata IC 10: " + ((this.ic_10_pr_ce.value==this.ic_10_pr_ce.checked)?'Yes':'No');
+	this.ic_9_pr_ce.text = "Correctable error in ABC PR packet metadata IC 9: " + ((this.ic_9_pr_ce.value==this.ic_9_pr_ce.checked)?'Yes':'No');
+	this.ic_8_pr_ce.text = "Correctable error in ABC PR packet metadata IC 8: " + ((this.ic_8_pr_ce.value==this.ic_8_pr_ce.checked)?'Yes':'No');
+	this.ic_7_pr_ce.text = "Correctable error in ABC PR packet metadata IC 7: " + ((this.ic_7_pr_ce.value==this.ic_7_pr_ce.checked)?'Yes':'No');
+	this.ic_6_pr_ce.text = "Correctable error in ABC PR packet metadata IC 6: " + ((this.ic_6_pr_ce.value==this.ic_6_pr_ce.checked)?'Yes':'No');
+	this.ic_5_pr_ce.text = "Correctable error in ABC PR packet metadata IC 5: " + ((this.ic_5_pr_ce.value==this.ic_5_pr_ce.checked)?'Yes':'No');
+	this.ic_4_pr_ce.text = "Correctable error in ABC PR packet metadata IC 4: " + ((this.ic_4_pr_ce.value==this.ic_4_pr_ce.checked)?'Yes':'No');
+	this.ic_3_pr_ce.text = "Correctable error in ABC PR packet metadata IC 3: " + ((this.ic_3_pr_ce.value==this.ic_3_pr_ce.checked)?'Yes':'No');
+	this.ic_2_pr_ce.text = "Correctable error in ABC PR packet metadata IC 2: " + ((this.ic_2_pr_ce.value==this.ic_2_pr_ce.checked)?'Yes':'No');
+	this.ic_1_pr_ce.text = "Correctable error in ABC PR packet metadata IC 1: " + ((this.ic_1_pr_ce.value==this.ic_1_pr_ce.checked)?'Yes':'No');
+	this.ic_0_pr_ce.text = "Correctable error in ABC PR packet metadata IC 0: " + ((this.ic_0_pr_ce.value==this.ic_0_pr_ce.checked)?'Yes':'No');
+},
+Reg3 : function(sig) {
+	this.lcb_frame_raw = {value:(sig>>16)&0xffff,type:'input'};
+	this.R3L1_frame_raw = {value:sig&0xffff,type:'input'};
+	this.lcb_frame_raw.text = "LCB Raw Frame: " + this.lcb_frame_raw.value;
+	this.R3L1_frame_raw.text = "R3L1 Raw Frame: " + this.R3L1_frame_raw.value;
+},
+Reg4 : function(sig) {
+	this.lcb_errcount = {value:(sig>>16)&0xffff,type:'input'};
+	this.R3L1_errcount = {value:sig&0xffff,type:'input'};
+	this.lcb_errcount.text = "LCB error count: " + this.lcb_errcount.value;
+	this.R3L1_errcount.text = "R3L1 error count: " + this.R3L1_errcount.value;
+},
+Reg5 : function(sig) {
+	this.unused = {value:(sig>>10)&0x3fffff,type:'unused'};
+	this.ADCval = {value:sig&0x3ff,type:'input'};
+	this.ADCval.text = "Measured ADC value: " + this.ADCval.value;
+},
+Reg6 : function(sig) {
+	this.unused = {value:(sig>>2)&0x3fffffff,type:'unused'};
+	this.GPI1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.GPI0 = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.GPI1.text = "Status of GPI1 pad: " + this.GPI1.options[this.GPI1.value];
+	this.GPI0.text = "Status of GPI0 pad: " + this.GPI0.options[this.GPI0.value];
+},
+Reg15 : function(sig) {
+	this.lcb_frame_raw = {value:(sig>>16)&0xffff,type:'input'};
+	this.R3L1_frame_raw = {value:(sig>>7)&0x1ff,type:'input'};
+	this.R3L1_errcount_ovfl = {value:(sig>>6)&1,type:'checkbox',checked:1,unchecked:0};
+	this.ePllInstantLock = {value:(sig>>5)&1,type:'checkbox',checked:1,unchecked:0};
+	this.lcb_scmd_err = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+	this.lcb_errcount_ovfl = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
+	this.lcb_decode_err = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
+	this.lcb_locked = {value:(sig>>1)&1,type:'checkbox',checked:1,unchecked:0};
+	this.R3L1_locked = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
+	this.lcb_frame_raw.text = "LCB Raw Frame: " + this.lcb_frame_raw.value;
+	this.R3L1_frame_raw.text = "R3L1 Raw Frame: " + this.R3L1_frame_raw.value;
+	this.R3L1_errcount_ovfl.text = "R3L1 Error Counter Overflowed: " + (this.R3L1_errcount_ovfl.checked?'Yes':'No');
+	this.ePllInstantLock.text = "PLL Lock Indicator: " + (this.ePllInstantLock.checked?'Yes':'No');
+	this.lcb_scmd_err.text = "LCB Slow Command Error: " + (this.lcb_scmd_err?'Yes':'No');
+	this.lcb_errcount_ovfl.text = "LCB Error Counter Overflowed: " + (this.lcb_errcount_ovfl.checked?'Yes':'No');
+	this.lcb_decode_err.text = "LCB Decode Error: " + (this.lcb_decode_err.checked?'Yes':'No');
+	this.lcb_locked.text = "LCB Locked Flag: " + (this.lcb_locked.checked?'Yes':'No');
+	this.R3L1_locked.text = "R3L1 Locked Flag: " + (this.R3L1_locked.checked?'Yes':'No');
+},
+Reg16 : function(sig) {
+	this.unused = {value:(sig>>5)&0x7ffffff,type:'unused'};
+	this.R3L1_errcount_clr = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+	this.lcb_errcount_clr = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
+	this.eFuseL = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
+	this.TestHPR = {value:(sig>>1)&1,type:'checkbox',checked:1,unchecked:0};
+	this.StopHPR = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
+	this.R3L1_errcount_clr.text = "Clear the R3L1 error counter: " + (this.R3L1_errcount_clr.checked?'Yes':'No');
+	this.lcb_errcount_clr.text = "Clear the LCB error counter: " + (this.lcb_errcount_clr.checked?'Yes':'No');
+	this.eFuseL.text = "Load the eFuse register from the Fuses: " + (this.eFuseL.checked?'Yes':'No');
+	this.TestHPR.text = "Send a single HPR Packet: " + (this.TestHPR.checked?'Yes':'No');
+	this.StopHPR.text = "Stop sending HPR Packets: " + (this.StopHPR.checked?'Yes':'No');
+},
+Reg17 : function(sig) {
+	this.comm_id = {value:(sig>>28)&0xf,type:'input'};
+	this.unused = {value:(sig>>24)&0xf,type:'unused'};
+	this.fuse_id = {value:sig&0xffffff,type:'input'};
+	this.comm_id.text = "Communications ID: " + this.comm_id.value;
+	this.fuse_id.text = "eFuse Serial Number: " + this.fuse_id.value;
+},
+Reg32 : function(sig) {
+	this.unused1 = {value:(sig>>26)&0x3f,type:'unused'};
+	this.lcba_delay160 = {value:(sig>>24)&3,type:'input'};
+	this.fd_rclk_fineDelay = {value:(sig>>20)&0xf,type:'input'};
+	this.hFD_LCBa_fineDelay = {value:(sig>>16)&0xf,type:'input'};
+	this.unused2 = {value:(sig>>14)&3,type:'unused'};
+	this.CFD_PRLP_coarseDelay = {value:(sig>>12)&3,type:'input'};
+	this.CFD_PRLP_fineDelay = {value:(sig>>8)&0xf,type:'input'};
+	this.unused3 = {value:(sig>>6)&3,type:'unused'};
+	this.CFD_BC_coarseDelay = {value:(sig>>4)&3,type:'input'};
+	this.CFD_BC_fineDelay = {value:sig&0xf,type:'input'};
+	this.lcba_delay160.text = "Internal LCB processor delay for LCBa (0-3): " + this.lcba_delay160.value;
+	this.fd_rclk_fineDelay.text = "Hybrid RCLK Fine Delay (0-15): " + this.fd_rclk_fineDelay.value;
+	this.hFD_LCBa_fineDelay.text = "Hybrid LCBa Fine Delay (0-15): " + this.hFD_LCBa_fineDelay.value;
+	this.CFD_PRLP_coarseDelay.text = "Hybrid PRLP Coarse Delay (0-3): " + this.CFD_PRLP_coarseDelay.value;
+	this.CFD_PRLP_fineDelay.text = "Hybrid PRLP Fine Delay (0-15): " + this.CFD_PRLP_fineDelay.value;
+	this.CFD_BC_coarseDelay.text = "Hybrid BC Coarse Delay (0-3):  " + this.CFD_BC_coarseDelay.value;
+	this.CFD_BC_fineDelay.text = "Hybrid BC Fine Delay (0-15): " + this.CFD_BC_fineDelay.value;
+},
+Reg33 : function(sig) {
+	this.fd_di7_fD = {value:(sig>>28)&0xf,type:'input'};
+	this.fd_di6_fD = {value:(sig>>24)&0xf,type:'input'};
+	this.fd_di5_fD = {value:(sig>>20)&0xf,type:'input'};
+	this.fd_di4_fD = {value:(sig>>16)&0xf,type:'input'};
+	this.fd_di3_fD = {value:(sig>>12)&0xf,type:'input'};
+	this.fd_di2_fD = {value:(sig>>8)&0xf,type:'input'};
+	this.fd_di1_fD = {value:(sig>>4)&0xf,type:'input'};
+	this.fd_di0_fD = {value:sig&0xf,type:'input'};
+	this.fd_di7_fD.text = "ABC Data In 7 Fine Delay (0-15): " + this.fd_di7_fD.value;
+	this.fd_di6_fD.text = "ABC Data In 6 Fine Delay: " + this.fd_di6_fD.value;
+	this.fd_di5_fD.text = "ABC Data In 5 Fine Delay : " + this.fd_di5_fD.value;
+	this.fd_di4_fD.text = "ABC Data In 4 Fine Delay: " + this.fd_di4_fD.value;
+	this.fd_di3_fD.text = "ABC Data In 3 Fine Delay : " + this.fd_di3_fD.value;
+	this.fd_di2_fD.text = "ABC Data In 2 Fine Delay: " + this.fd_di2_fD.value;
+	this.fd_di1_fD.text = "ABC Data In 1 Fine Delay: " + this.fd_di1_fD.value;
+	this.fd_di0_fD.text = "ABC Data In 0 Fine Delay: " + this.fd_di0_fD.value;
+},
+Reg34 : function(sig) {
+	this.unused = {value:(sig>>12)&0xfffff,type:'unused'};
+	this.fd_di10_fD = {value:(sig>>8)&0xf,type:'input'};
+	this.fd_di9_fD = {value:(sig>>4)&0xf,type:'input'};
+	this.fd_di8_fD = {value:sig&0xf,type:'input'};
+	this.fd_di10_fD.text = "ABC Data In 10 Fine Delay (0-15): " + this.fd_di10_fD.value;
+	this.fd_di9_fD.text  = "ABC Data In 9 Fine Delay: " + this.fd_di9_fD.value;
+	this.fd_di8_fD.text  = "ABC Data In 8 Fine Delay: " + this.fd_di8_fD.value;
+},
+Reg35 : function(sig) {
+	this.unused1 = {value:(sig>>24)&0xff,type:'unused'};
+	this.EnPhase={value:(sig>>16)&0xff,type:'binput',n:8};
+	this.unused2 = {value:(sig>>14)&3,type:'unused'};
+	this.RefF ={value:(sig>>12)&3,type:'select',options:{1:'40 MHz',2:'80 MHz',3:'160 MHz'}};
+   	this.Res={value:(sig>>8)&0xf,type:'select',options:{0:'0.5 kOhm',1:'1 kOhm',2:'1.5 kOhm',3:'2 kOhm',4:'2.5 kOhm',
+            5:'3 kOhm',6:'3.5 kOhm',7:'4 kOhm',8:'4.5 kOhm',9:'5 kOhm',10: '5.5 kOhm',11:'6 KOhm',12:'6.5 kOhm'
+		,13:'7 kOhm',14:'7.5 kOhm',15:'8 kOhm'}}; 
+	this.unused3 = {value:(sig>>6)&3,type:'unused'};
+   	this.Cap={value:(sig>>4)&3, type:'select', options:{0:'30 pF',1:'40 pF',2:'50 pF',3:'70 pF'}}; 
+   	this.Icp={value:sig&0xf,type:'select',options:{0:'0 uA',1:'8.5 uA',2:'17 uA',3:'25.5 uA',4:'34 uA',5:'42.5 uA',
+						  6:'51 uA',7:'59.5 uA',8:'68 uA',9:'76.5 uA',10:'85 uA',11:'93.5 uA',
+						  12:'102 uA',13:'110.5 uA',14:'119 uA',15:'127.5 uA'}};
+	this.EnPhase.text = "Enable specific phases: " + bin_string(this.EnPhase.value,8);
+	this.RefF.text = "ePLL Reference Frequency: " + this.RefF.options[this.RefF.value];
+	this.Res.text = "ePLL Resistance: " + this.Res.options[this.Res.value];
+	this.Cap.text = "ePLL Loop Filter Capacitance: " + this.Cap.options[this.Cap.value];
+	this.Icp.text = "ePLL Charge Pump Current: " + this.Icp.options[this.Icp.value];
+},
+Reg36 : function(sig) {
+	this.unused = {value:(sig>>12)&0xfffff,type:'unused'};
+	this.PhaseC={value:(sig>>8)&0xf, type:'select', options:{0:'0 deg', 1:'22.5 deg', 2:'45 deg', 3:'67.5 deg', 4:'90 deg', 5:'112.5 deg', 6:'135 deg', 7:'157.5 deg', 8:'180 deg', 9:'202.5 deg', 10:'225 deg', 11:'247.5 deg', 12:'270 deg', 13:'292.5 deg', 14:'315 deg', 15:'337.5 deg'}};
+   	this.PhaseB={value:(sig>>4)&0xf, type: 'select', options: {0:'0 deg', 1:'22.5 deg', 2:'45 deg', 3:'67.5 deg', 4:'90 deg', 5:'112.5 deg', 6:'135 deg', 7:'157.5 deg', 8:'180 deg', 9:'202.5 deg', 10:'225 deg', 11:'247.5 deg', 12:'270 deg', 13:'292.5 deg', 14:'315 deg', 15:'337.5 deg'}};
+   	this.PhaseA={value:sig&0xf, type: 'select', options: {0:'0 deg', 1:'22.5 deg', 2:'45 deg', 3:'67.5 deg', 4:'90 deg', 5:'112.5 deg', 6:'135 deg', 7:'157.5 deg', 8:'180 deg', 9:'202.5 deg', 10:'225 deg', 11:'247.5 deg', 12:'270 deg', 13:'292.5 deg', 14:'315 deg', 15:'337.5 deg'}};
+	this.PhaseC.text = "Phase of clk320C: " + this.PhaseC.options[this.PhaseC.value];
+	this.PhaseB.text = "Phase of clk320B: " + this.PhaseB.options[this.PhaseB.value];
+	this.PhaseA.text = "Phase of clk320A: " + this.PhaseA.options[this.PhaseA.value];
+},
+Reg37 : function(sig) {
+	this.unused1 = {value:(sig>>21)&0x7ff,type:'unused'};
+	this.PhaseC={value:(sig>>16)&0x1f,type:'select',options:{0:'0 deg',1:'11.25 deg',2:'22.5 deg', 3:'33.75 deg',4:'45 deg',5:'56.25 deg',6:'67.5 deg',7:'78.75 deg',8:'90 deg',9:'101.25 deg',10:'112.5 deg',11:'123.75 deg',12:'135 deg',13:'146.25 deg',14:'157.5 deg',15:'168.75 deg',16:'180 deg',17:'191.25 deg',18:'202.5 deg',19:'213.75 deg',20:'225 deg',21:'236.25 deg',22:'247.5 deg',23:'258.75 deg',24:'270 deg',25:'281.25 deg',26:'292.5 deg',27:'303.75 deg',28:'315 deg',29:'326.25 deg',30:'337.5 deg',31:'348.75 deg'}};
+	this.unused2 = {value:(sig>>13)&7,type:'unused'};
+	this.PhaseB={value:(sig>>8)&0x1f,type:'select',options:{0:'0 deg',1:'11.25 deg',2:'22.5 deg', 3:'33.75 deg',4:'45 deg',5:'56.25 deg',6:'67.5 deg',7:'78.75 deg',8:'90 deg',9:'101.25 deg',10:'112.5 deg',11:'123.75 deg',12:'135 deg',13:'146.25 deg',14:'157.5 deg',15:'168.75 deg',16:'180 deg',17:'191.25 deg',18:'202.5 deg',19:'213.75 deg',20:'225 deg',21:'236.25 deg',22:'247.5 deg',23:'258.75 deg',24:'270 deg',25:'281.25 deg',26:'292.5 deg',27:'303.75 deg',28:'315 deg',29:'326.25 deg',30:'337.5 deg',31:'348.75 deg'}};
+	this.unused3 = {value:(sig>>5)&7,type:'unused'};
+	this.PhaseA={value:sig&0x1f,type:'select',options:{0:'0 deg',1:'11.25 deg',2:'22.5 deg', 3:'33.75 deg',4:'45 deg',5:'56.25 deg',6:'67.5 deg',7:'78.75 deg',8:'90 deg',9:'101.25 deg',10:'112.5 deg',11:'123.75 deg',12:'135 deg',13:'146.25 deg',14:'157.5 deg',15:'168.75 deg',16:'180 deg',17:'191.25 deg',18:'202.5 deg',19:'213.75 deg',20:'225 deg',21:'236.25 deg',22:'247.5 deg',23:'258.75 deg',24:'270 deg',25:'281.25 deg',26:'292.5 deg',27:'303.75 deg',28:'315 deg',29:'326.25 deg',30:'337.5 deg',31:'348.75 deg'}};
+	this.PhaseC.text = "Phase of clk160C: " + this.PhaseC.options[this.PhaseC.value];
+	this.PhaseB.text = "Phase of clk160B: " + this.PhaseB.options[this.PhaseB.value];
+	this.PhaseA.text = "Phase of clk160A: " + this.PhaseA.options[this.PhaseA.value];
+},
+Reg38 : function(sig) {
+	this.unused = {value:(sig>>28)&0xf,type:'unused'};
+	this.rclk_hyb_en = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.rclk_hyb_cur = {value:(sig>>24)&7,type:'input'};
+	this.prlp_hyb_en = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.prlp_hyb_cur = {value:(sig>>20)&7,type:'input'};
+	this.LCBa_hyb_en = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.LCBa_hyb_cur = {value:(sig>>16)&7,type:'input'};
+	this.bc_out_en = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.bc_out_cur = {value:(sig>>12)&7,type:'input'};
+	this.R3L1_out_en = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.R3L1_out_cur = {value:(sig>>8)&7,type:'input'};
+	this.LCB_out_en = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.LCB_out_cur = {value:(sig>>4)&7,type:'input'};
+	this.STVclk_out_en = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.STVclk_out_cur = {value:sig&7,type:'input'};
+	this.rclk_hyb_en.text = "Hybrid RCLK driver: " + this.rclk_hyb_en.options[this.rclk_hyb_en.value];
+	this.rclk_hyb_cur.text = "Hybrid RCLK driver current (0-7): " + this.rclk_hyb_cur.value;
+	this.prlp_hyb_en.text = "Hybrid PRLP driver: " + this.prlp_hyb_en.options[this.prlp_hyb_en.value];
+	this.prlp_hyb_cur.text = "Hybrid PRLP driver current: " + this.prlp_hyb_cur.value;
+	this.LCBa_hyb_en.text = "Hybrid LCBa driver: " + this.LCBa_hyb_en.options[this.LCBa_hyb_en.value];
+	this.LCBa_hyb_cur.text = "Hybrid LCBa driver current: " + this.LCBa_hyb_cur.value;
+	this.bc_out_en.text = "Output BC driver: " + this.bc_out_en.options[this.bc_out_en.value];
+	this.bc_out_cur.text = "Output BC driver current: " + this.bc_out_cur.value;
+	this.R3L1_out_en.text = "Output R3L1 driver: " + this.R3L1_out_en.options[this.R3L1_out_en.value];
+	this.R3L1_out_cur.text = "Output R3L1 driver current: " + this.R3L1_out_cur.value;
+	this.LCB_out_en.text = "Output LCB driver: " + this.LCB_out_en.options[this.LCB_out_en.value];
+	this.LCB_out_cur.text = "Output LCB driver current: " + this.LCB_out_cur.value;
+	this.STVclk_out_en.text = "Output STVclk driver: " + this.STVclk_out_en.options[this.STVclk_out_en.value];
+	this.STVclk_out_cur.text = "Output STVclk driver current: " + this.STVclk_out_cur.value;
+},
+Reg39 : function(sig) {
+	this.unused1 = {value:(sig>>21)&0x7ff,type:'unused'};
+	this.dCLK_en = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.dCLK_enpre = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.dCLK_cur = {value:(sig>>16)&7,type:'input'};
+	this.unused2 = {value:(sig>>6)&0x3ff,type:'unused'};
+	this.d1_term = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.d1_en = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.d1_enpre = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.d1_cur = {value:sig&7,type:'input'};
+	this.dCLK_en.text = "DataCLK driver: " + this.dCLK_en.options[this.dCLK_en.value];
+	this.dCLK_enpre.text = "DataCLK driver pre-emphasis: " + this.dCLK_enpre.options[this.dCLK_enpre.value];
+	this.dCLK_cur.text = "DataCLK driver current: " + this.dCLK_cur.value;
+	this.d1_term.text = "Back termination on Data1 driver: " + this.d1_term.options[this.d1_term.value];
+	this.d1_en.text = "Data1 driver: " + this.d1_en.options[this.d1_en.value];
+	this.d1_enpre.text = "Data1 driver pre-emphasis: " + this.d1_enpre.options[this.d1_enpre.value];
+	this.d1_cur.text = "Data1 driver current: " + this.d1_cur.value;
+},
+Reg40 : function(sig) {
+	this.unused1 = {value:(sig>>20)&0xfff,type:'unused'};
+	this.IC_ts = {value:(sig>>16)&0xf,type:'binput',n:4};
+	this.unused2 = {value:(sig>>11)&0x1f,type:'unused'};
+	this.IC_enable = {value:sig&0x7ff,type:'binput',n:11};
+	this.IC_ts.text = "Full transparent mode channel select: " + bin_string(this.IC_ts.value,4);
+	this.IC_enable.text = "Input channel enables: " + bin_string(this.IC_enable.value,11);
+},
+Reg41 : function(sig) {
+	this.unused1 = {value:(sig>>19)&0x1fff,type:'unused'};
+	this.prbs_mode = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
+	this.encode_8b10b = {value:(sig>>17)&1,type:'select',options:{0:'no encoding',1:'8b10b encoding'}};
+	this.encode_cntl = {value:(sig>>16)&1,type:'select',options:{0:'Use pad',1:'Use register to control output encoding'}};
+	this.unused2 = {value:(sig>>15)&1,type:'unused'};
+	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0:'16',1:'1',2:'2',3:'4',4:'8'}};
+	this.unused3 = {value:(sig>>10)&3,type:'unused'};
+	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0:'Physics',1:'RegRead',2:'PackTrans',3:'FullTrans'}};
+	this.unused4 = {value:(sig>>5)&7,type:'unused'};
+	this.readout_speed = {value:(sig>>4)&1,type:'select',options:{0:'320 MHz',1:'640 MHz'}};
+	this.unused5 = {value:(sig>>1)&7,type:'unused'};
+	this.trigger_mode= {value:sig&1,type:'select',options:{0:'Multilevel trigger',1:'Single level trigger'}};
+	this.prbs_mode.text = "PRBS Mode: " + ((this.prbs_mode.value==this.prbs_mode.checked)?'Yes':'No');
+	this.encode_8b10b.text = "Encoding: " + this.encode_8b10b.options[this.encode_8b10b.value];
+	this.encode_cntl.text = "Encoding control: " + this.encode_cntl.options[this.encode_cntl.value];
+	this.max_Npacket.text = "Maximum number of ABC packets: " + this.max_Npacket.options[this.max_Npacket.value];
+	this.operating_mode.text = "Operating Mode: " + this.operating_mode.options[this.operating_mode.value];
+	this.readout_speed.text = "Readout Speed: " + this.readout_speed.options[this.readout_speed.value];
+	this.trigger_mode.text = "Trigger Mode: " + this.trigger_mode.options[this.trigger_mode.value];
+},
+Reg42 : function(sig) {
+	this.unused1 = {value:(sig>>19)&0x1fff,type:'unused'};
+	this.prbs_mode = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
+	this.encode_8b10b = {value:(sig>>17)&1,type:'select',options:{0:'no encoding',1:'8b10b encoding'}};
+	this.encode_cntl = {value:(sig>>16)&1,type:'select',options:{0:'Use pad',1:'Use register to control output encoding'}};
+	this.unused2 = {value:(sig>>15)&1,type:'unused'};
+	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0:'16',1:'1',2:'2',3:'4',4:'8'}};
+	this.unused3 = {value:(sig>>10)&3,type:'unused'};
+	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0:'Physics',1:'RegRead',2:'PackTrans',3:'FullTrans'}};
+	this.unused4 = {value:(sig>>5)&7,type:'unused'};
+	this.readout_speed = {value:(sig>>4)&1,type:'select',options:{0:'320 MHz',1:'640 MHz'}};
+	this.unused5 = {value:(sig>>1)&7,type:'unused'};
+	this.trigger_mode= {value:sig&1,type:'select',options:{0:'Multilevel trigger',1:'Single level trigger'}};
+	this.prbs_mode.text = "PRBS Mode: " + ((this.prbs_mode.value==this.prbs_mode.checked)?'Yes':'No');
+	this.encode_8b10b.text = "Encoding: " + this.encode_8b10b.options[this.encode_8b10b.value];
+	this.encode_cntl.text = "Encoding control: " + this.encode_cntl.options[this.encode_cntl.value];
+	this.max_Npacket.text = "Maximum number of ABC packets: " + this.max_Npacket.options[this.max_Npacket.value];
+	this.operating_mode.text = "Operating Mode: " + this.operating_mode.options[this.operating_mode.value];
+	this.readout_speed.text = "Readout Speed: " + this.readout_speed.options[this.readout_speed.value];
+	this.trigger_mode.text = "Trigger Mode: " + this.trigger_mode.options[this.trigger_mode.value];
+},
+Reg43 : function(sig) {
+	this.unused1 = {value:(sig>>21)&0x7ff,type:'unused'};
+	this.efuse_prog_bit = {value:(sig>>16)&0x1f,type:'binput',n:5};
+	this.unused2 = {value:(sig>>14)&3,type:'unused'};
+	this.GPO1 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.GPO0 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.unused3 = {value:(sig>>9)&7,type:'unused'};
+	this.MaskHPR = {value:(sig>>8)&1,type:'checkbox',checked:1,unchecked:0};
+	this.unused4 = {value:(sig>>5)&7,type:'unused'};
+	this.BG_setting = {value:sig&0x1f,type:'input'};
+	this.efuse_prog_bit.text = "Bit of eFuse to set to '1' when programming: " + bin_string(this.efuse_prog_bit.value,5);
+	this.GPO1.text = "General Purpose Output pad 1 control: " + this.GPO1.options[this.GPO1.value];	
+	this.GPO0.text = "General Purpose Output pad 0 control: " + this.GPO0.options[this.GPO0.value];
+	this.MaskHPR.text = "Prevent HPR packets from being sent: " + ((this.MaskHPR.value==this.MaskHPR.checked)?'Yes':'No');
+	this.BG_setting.text = "Bandgap setting: " + this.BG_setting.value;
+},
+Reg44 : function(sig) {
+	this.unused1 = {value:(sig>>27)&0x1f,type:'unused'};
+	this.BCMM_squelch = {value:(sig>>16)&0x7ff,type:'binput',n:11};
+	this.unused2 = {value:(sig>>10)&0x3f,type:'unused'};
+	this.BCIDrstDelay = {value:sig&0x1ff,type:'input'};
+	this.BCMM_squelch.text = "Mask error block generation if only these channels have BCID mismatch errors: " + bin_string(this.BCMM_squelch.value,11);
+	this.BCIDrstDelay.text = "Delay before BCR takes effect: " + this.BCIDrstDelay.value;
+},
+Reg45 : function(sig) {
+	this.unused1 = {value:(sig>>5)&0x3ffffff,type:'unused'};
+	this.AMAC_SSSH = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+	this.unused2 = {value:(sig>>1)&7,type:'unused'};
+	this.ABC_ResetB = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
+	this.AMAC_SSSH.text = "AMAC Communications Reset: " + ((this.AMAC_SSSH.value==this.AMAC_SSSH.checked)?'Yes':'No');
+	this.ABC_ResetB.text = "ABCStars External Reset: " + ((this.ABC_ResetB.value==this.ABC_ResetB.checked)?'Yes':'No');
+},
+Reg46 : function(sig) {
+	this.unused1 = {value:(sig>>5)&0x3ffffff,type:'unused'};
+	this.AMAC_SSSH = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+	this.unused2 = {value:(sig>>1)&7,type:'unused'};
+	this.ABC_ResetB = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
+	this.AMAC_SSSH.text = "AMAC Communications Reset: " + ((this.AMAC_SSSH.value==this.AMAC_SSSH.checked)?'Yes':'No');
+	this.ABC_ResetB.text = "ABCStars External Reset: " + ((this.ABC_ResetB.value==this.ABC_ResetB.checked)?'Yes':'No');
+},
+Reg47 : function(sig) {
+	this.R3L1_errcount_thr = {value:(sig>>16)&0xffff,type:'input'};
+	this.lcb_errcount_thr = {value:sig&0xffff,type:'input'};
+	this.R3L1_errcount_thr.text = "R3L1 error count threshold: " + this.R3L1_errcount_thr.value;
+	this.lcb_errcount_thr.text =  "LCB error count threshold: " + this.lcb_errcount_thr.value;
+},
+Reg48 : function(sig) {
+	this.unused1 = {value:(sig>>24)&0x7f,type:'unused'};
+	this.therm_offset = {value:(sig>>20)&0xf,type:'select',options:{0: '0 mV',1:'16 mV',2:'30 mV',3:'46 mV',4:'79 mV',5:'95 mV', 6:'109 mV',7:'125 mV',8:'146 mV',9:'162 mV',10:'176 mV',11:'192 mV',12:'215 mV',13:'231 mV',14:'245 mV',15:'261 mV'}};
+	this.unused2 = {value:(sig>>19)&1,type:'unused'};
+	this.ana_set = {value:(sig>>16)&7,type:'select',options:{0:'Bandgap voltage',1:'Internal temperature',2:'Calibration input',3:'VDD_RAW',4:'VDD_REG',5:'Hybrid ground'}};
+	this.unused3 = {value:(sig>>15)&1,type:'unused'};
+	this.am_sw100 = {value:(sig>>14)&1,type:'binput',n:1};
+	this.am_sw80 = {value:(sig>>13)&1,type:'binput',n:1};
+	this.am_sw60 = {value:(sig>>12)&1,type:'select',options:{0:'1 mV desired ramp, 1 V range adapter Ref_Out',1:'0.75 mV desired ramp, 0.75 V range adapter Ref_Out'}};
+	this.unused4 = {value:(sig>>11)&1,type:'unused'};
+	this.am_sw210 = {value:(sig>>8)&7,type:'input'};
+	this.unused5 = {value:(sig>>5)&7,type:'unused'};
+	this.am_calib = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+	this.unused6 = {value:(sig>>1)&7,type:'unused'};
+	this.am_enable = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.therm_offset.text = "Output offset for temperature sensor: " + this.therm_offset.options[this.therm_offset.value];
+	this.ana_set.text = "Analog MUX select: " + this.ana_set.options[this.ana_set.value]; //
+	this.am_sw100.text = "Ramp gain setting sw_100: " + this.am_sw100.value;
+	this.am_sw80.text = "Ramp gain setting sw_80: " + this.am_sw80.value;
+	this.am_sw60.text = "Integrated DAC desired ramp AND Range adapter Ref_Out voltage: " + ((this.am_sw60.value==this.am_sw60.checked)?'Yes':'No');
+	this.am_sw210.text = "Ramp gain trim: " + this.am_sw210.value;
+	this.am_calib.text = "Calibration Mode: " + ((this.am_calib.value==this.am_calib.checked)?'Yes':'No');
+	this.am_enable.text = "ADC: " + this.am_enable.options[this.am_enable.value];
+}
+};
+
+//Create value fields for current register and initialize with defaults
+function Initialize() {
+	document.getElementById('testdiv').innerHTML="";
+	var reg = 'Reg' + document.getElementById('register').value;
+	var def_sig = new Registers[reg](defaults[reg]); // Create new instance of register with its default signal
+	for (x in def_sig) {  // Create value fields for the register, and initialize with default values
+		if (def_sig[x].type!="unused") {
+		testdiv.appendChild(document.createElement('br'));
+		var textEl = document.createTextNode(def_sig[x].text.split(':')[0]+':');
+
+		if (def_sig[x].type=='select') {
+			var element = document.createElement('select');
+			for (var y in def_sig[x].options) {
+				var option = document.createElement('option')
+				option.setAttribute('value',y.toString());
+				option.appendChild(document.createTextNode(def_sig[x].options[y]));
+				element.appendChild(option);
+      			 }
+			selectItemByValue(element,def_sig[x].value);
+		} else if (def_sig[x].type=='input') {
+			var element = document.createElement('input');
+			element.setAttribute('value',def_sig[x].value);
+		} else if (def_sig[x].type=='checkbox') {
+			var element = document.createElement('input');
+			element.setAttribute('type','checkbox');
+			if (def_sig[x].value==def_sig[x].checked) element.setAttribute('checked',true);
+			else element.removeAttribute('checked');
+		} else if (def_sig[x].type=='binput') {
+			var element = document.createElement('input');
+			element.setAttribute('value',bin_string(def_sig[x].value,def_sig[x].n));
+			element.setAttribute('size',def_sig[x].n);
+		} else if (def_sig[x].type=='hexinput') {
+			var element = document.createElement('input');
+			element.setAttribute('value',hex_string(def_sig[x].value,def_sig[x].n));
+		}
+		element.setAttribute('id',x);
+		testdiv.appendChild(textEl);
+		testdiv.appendChild(element);
+		 }
+	}
+	
+}
+
+//Initialize value fields for current register, then convert signal to values
+function Convert() {
+	Initialize();
+	var format = document.getElementById('format').value;
+	var reg = 'Reg' + document.getElementById('register').value;
+	var sig = parseInt(document.getElementById('sig').value,format);
+	if ((sig<0) || (sig>max_test)) {alert('Invalid entry'); return;}
+	output = new Registers[reg](sig); // New instance of register using signal in field
+	for (x in output) { // Loop through register variables, assigning their values to corresponding value fields
+		if (output[x].type!="unused") {
+		var element = document.getElementById(x);
+		if (output[x].type=='select') selectItemByValue(element,output[x].value);
+		else if (output[x].type=='input') element.setAttribute('value',output[x].value);
+		else if (output[x].type=='checkbox') {
+			 (output[x].value==output[x].checked)?element.setAttribute('checked',true):element.removeAttribute('checked');
+		} else if (output[x].type=='binput') {
+			element.setAttribute('value',bin_string(output[x].value,output[x].n));
+		} else if (output[x].type=='hexinput') {
+			element.setAttribute('value',hex_string(output[x].value,output[x].n));
+		}
+		}
+	}
+	
+}
+
+//Convert info to signal
+function Convert2() {
+	var reg_id = document.getElementById('register').value;
+	var reg = 'Reg' + reg_id;
+	var s = new Registers[reg](defaults[reg]); // new instance of selected register	
+
+	for (var x in s) { // loop through parameters of register
+		if (s[x].type!='unused') { // not including unused bits
+		var element=document.getElementById(x); // select the corresponding value field
+		if (s[x].type=='select') {
+			for (var y in s[x].options) {
+				if (element.value == y) {s[x].value=y;}
+			}
+		} else if (s[x].type=='input') s[x].value = parseInt(element.value);
+		else if (s[x].type=='binput') s[x].value = parseInt(element.value,2);
+		else if (s[x].type=='hexinput') s[x].value = parseInt(element.value,16);
+		else if (s[x].type=='checkbox') element.checked?s[x].value=s[x].checked:s[x].value=s[x].unchecked;
+		}
+	}
+
+	var m = new Registers[reg](max_test); // new instance of the register, using maximum signal
+	var output="";
+	for (var x in s) { // assemble full signal in binary (using maximum signal to set length of each segment and pad with zeroes as appropriate)
+		var temp=parseInt(s[x].value);
+		var temp_m = parseInt(m[x].value);
+		if (temp>temp_m) {alert('Value '+temp+' in field '+x+' too large. Maximum of '+temp_m+'.'); break;}
+		temp=temp.toString(2);
+		temp_m=temp_m.toString(2);
+		while (temp.length<temp_m.length) temp='0'+temp;
+		output=output+temp; 
+	}
+	output = parseInt(output,2);
+	var format = document.getElementById('format').value;
+	if (format==2) output = bin_string(output,32);           // convert full signal to current format
+	else if (format==16) output = hex_string(output,8);
+	else output = output.toString(format);
+	document.getElementById('sig').value=output;
+}
+
+//Restore default values and signal for current register
+function RestoreDefaults() {
+	Initialize();
+	Convert2();
+}
+
+//Create and fill text field with current values/register (not current signal)
+function toText() {
+	document.getElementById('textdiv').innerHTML="";
+
+	var format = document.getElementById('format').value;
+	var reg_id = document.getElementById('register').value;
+	var reg = 'Reg' + reg_id;
+	var temp_sig = parseInt(document.getElementById('sig').value,format); // Store value in signal field
+	Convert2(); // Temporarily place value in signal field corresponding to value fields
+
+	var sig = parseInt(document.getElementById('sig').value,format);
+	var s = new Registers[reg](sig); // Create new instance of current register with signal  
+
+	if (format==2) temp_sig = bin_string(temp_sig,32);           
+	else if (format==16) temp_sig = hex_string(temp_sig,8);         // Restore value to signal field (in proper format)
+	else temp_sig = temp_sig.toString(format); 
+	document.getElementById('sig').value=temp_sig;
+
+	var text = "";
+	for (j in s) {
+		if(s[j].type!='unused') text = text + s[j].text + "\n";
+	}			     // Text output for current register instance
+	
+	var textbox = document.createElement('textarea');
+	textbox.setAttribute('id','textarea');
+	textbox.setAttribute('cols',70);
+	textbox.setAttribute('rows',15);
+	var div = document.getElementById('textdiv');          // Create area for text output
+	div.appendChild(document.createElement('br'));
+	div.appendChild(textbox);	
+	document.getElementById('textarea').value=text;
+	
+	var hide_button = document.createElement('button');
+	hide_button.setAttribute('id','hide_button');
+	hide_button_text = document.createTextNode('Hide text');
+	hide_button.appendChild(hide_button_text);
+	div.appendChild(document.createElement('br'));
+	div.appendChild(hide_button);
+	hide_button.addEventListener('click',function() {
+		div.innerHTML="";
+	},false);
+
+	var download_button = document.createElement('button');
+	download_button.setAttribute('id','download_button');
+	var button_text = document.createTextNode('Download text file');      // Create download button
+	download_button.appendChild(button_text);
+
+	div.appendChild(document.createElement('br'));
+	div.appendChild(document.createElement('br'));
+	div.appendChild(download_button);
+
+	download_button.addEventListener('click',function() {
+
+	var text = document.getElementById('textarea').value;
+	var filename = prompt("","filename.txt");                    // Create click event for download button
+	
+	download(filename,text);
+},false);
+}
+
+//Download "text" into "filename"
+function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+}
+
+//Convert int "a" to binary string of length "n"
+function bin_string(a,n) {
+	a = a.toString(2);
+	while (a.length < n) a = '0' + a;
+	return a;
+}
+
+//Convert int "a" to hex string of length "n"
+function hex_string(a,n) { 
+	var temp = '0x1'
+	while (temp.length < n+3) temp = temp + '0'; 
+	temp = parseInt(temp,16);
+	return (a+temp).toString(16).substr(-n).toUpperCase();	
+}
+
+//Select option with value "value" from dropdown menu "elmnt"
+function selectItemByValue(element, value){
+
+  for(var j=0; j < element.options.length; j++)
+  {
+    if(element.options[j].value == value) {
+      element.selectedIndex = j;
+      break;
+    }
+  } 
+}
+</script>
+</head>
+<body>
+
+<h2>HCCStar</h2>
+
+<div id='rightHalf' class='right'>
+<div id='desc' class='right'></div>
+<div class='line right'></div>
+<div id="reg" class='left'></div>
+
+</div>
+Register:</br>
+<input id='register'></input> <button onclick='Initialize();'>Select register</button></br>
+Signal (32 bit): </br>
+<input id='sig' size='32'></input></br>
+<select id='format'>
+<option value=16>Hexadecimal</option>
+<option value=2>Binary</option>
+<option value=10>Decimal</option>
+</select>
+<button onclick='Convert();'>Signal->Info</button> 
+<button onclick='Convert2();'>Info->Signal</button>
+<button onclick='RestoreDefaults();'>Restore Defaults</button></br>
+<div id='testdiv'></div></br>
+	<button onclick='toText();'>Generate text</button></br>
+<div id='textdiv'>
+
+</div>
+</body> 
+</html>
