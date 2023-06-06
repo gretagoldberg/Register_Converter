@@ -38,16 +38,18 @@ Reg47:0,Reg48:0x6600
 
 //Register Descriptions
 var RegDesc =  ["Register(s):Description",
-		"0-2:SEU 1-3 (RO)",
+		"0-1:SEU 1-2 (RO)",
 		"3:FrameRaw (RO)",
 		"4:LCB error (RO)",
 		"5:ADC Status (RO)",
 		"6:Status (RO)",
+        "7-9:ABC Flow 1-3 (RO)",
+        "10:Readout Request Queue Occupancy (RO)",
 		"15:High Priority (RO)",
 		"16:Pulse (WO)",
 		"17:Addressing (Fuse)",
 		"32-34:Delay 1-3 (RW)",
-		"35-37:PLL 1-3 (RW)",
+		"35:PLL 1-3 (RW)",
 		"38-39:DRV 1-2 (RW)",
 		"40:ICenable (RW)",
 		"41,42:OPmode (RW)",
@@ -82,20 +84,18 @@ var Registers = {
 Reg0 : function(sig) {
 	this.HPR_State_SEU = {value:(sig>>31)&1,type:'binput',n:1};
 	this.HPR_Counter_SEU = {value:(sig>>30),type:'binput',n:1};
-	this.R3L1_decoder_SEU = {value:(sig>>21)&3,type:'binput',n:2};
-	this.LCB_decoder_SEU = {value:(sig>>17)&0xf,type:'binput',n:4};
-	this.Reg_47_SEU = {value:(sig>>16)&1,type:'binput',n:1};
-	this.Reg_46_SEU = {value:(sig>>15)&1,type:'binput',n:1};
-	this.Reg_45_SEU = {value:(sig>>14)&1,type:'binput',n:1};
-	this.Reg_44_SEU = {value:(sig>>13)&1,type:'binput',n:1};
-	this.Reg_43_SEU = {value:(sig>>12)&1,type:'binput',n:1};
-	this.Reg_42_SEU = {value:(sig>>11)&1,type:'binput',n:1};
-	this.Reg_41_SEU = {value:(sig>>10)&1,type:'binput',n:1};
-	this.Reg_40_SEU = {value:(sig>>9)&1,type:'binput',n:1};
-	this.Reg_39_SEU = {value:(sig>>8)&1,type:'binput',n:1};
-	this.Reg_38_SEU = {value:(sig>>7)&1,type:'binput',n:1};
-	this.Reg_37_SEU = {value:(sig>>6)&1,type:'binput',n:1};
-	this.Reg_36_SEU = {value:(sig>>5)&1,type:'binput',n:1};
+    this.NC = {value:(sig>>16)&0x1f,type:'unused'};
+    this.Reg_48_SEU = {value:(sig>>15)&1,type:'binput',n:1};
+	this.Reg_47_SEU = {value:(sig>>14)&1,type:'binput',n:1};
+	this.Reg_46_SEU = {value:(sig>>13)&1,type:'binput',n:1};
+	this.Reg_45_SEU = {value:(sig>>12)&1,type:'binput',n:1};
+	this.Reg_44_SEU = {value:(sig>>11)&1,type:'binput',n:1};
+	this.Reg_43_SEU = {value:(sig>>10)&1,type:'binput',n:1};
+	this.Reg_42_SEU = {value:(sig>>9)&1,type:'binput',n:1};
+	this.Reg_41_SEU = {value:(sig>>8)&1,type:'binput',n:1};
+	this.Reg_40_SEU = {value:(sig>>7)&1,type:'binput',n:1};
+	this.Reg_39_SEU = {value:(sig>>6)&1,type:'binput',n:1};
+	this.Reg_38_SEU = {value:(sig>>5)&1,type:'binput',n:1};
 	this.Reg_35_SEU = {value:(sig>>4)&1,type:'binput',n:1};
 	this.Reg_34_SEU = {value:(sig>>3)&1,type:'binput',n:1};
 	this.Reg_33_SEU = {value:(sig>>2)&1,type:'binput',n:1};
@@ -103,8 +103,7 @@ Reg0 : function(sig) {
 	this.Reg_17_SEU = {value:(sig>>0)&1,type:'binput',n:1};
 	this.HPR_State_SEU.text = "SEU in HPR Logic State Machine: " + bin_string(this.HPR_State_SEU.value,1);
 	this.HPR_Counter_SEU.text = "SEU in HPR Counter: " + bin_string(this.HPR_Counter_SEU.value,1);
-	this.R3L1_decoder_SEU = "SEU in various R3L1 decoder parts: " + bin_string(this.R3L1_decoder_SEU.value,2);
-	this.LCB_decoder_SEU = "SEU in various LCB decoder parts: " + bin_string(this.LCB_decoder_SEU.value,4);
+    this.Reg_48_SEU = "SEU in Register 48: " + bin_string(this.Reg_48_SEU.value,1);
 	this.Reg_47_SEU = "SEU in Register 47: " + bin_string(this.Reg_47_SEU.value,1);
 	this.Reg_46_SEU = "SEU in Register 46: " + bin_string(this.Reg_46_SEU.value,1);
 	this.Reg_45_SEU = "SEU in Register 45: " + bin_string(this.Reg_45_SEU.value,1);
@@ -115,8 +114,6 @@ Reg0 : function(sig) {
 	this.Reg_40_SEU = "SEU in Register 40: " + bin_string(this.Reg_40_SEU.value,1);
 	this.Reg_39_SEU = "SEU in Register 39: " + bin_string(this.Reg_39_SEU.value,1);
 	this.Reg_38_SEU = "SEU in Register 38: " + bin_string(this.Reg_38_SEU.value,1);
-	this.Reg_37_SEU = "SEU in Register 37: " + bin_string(this.Reg_37_SEU.value,1);
-	this.Reg_36_SEU = "SEU in Register 36: " + bin_string(this.Reg_36_SEU.value,1);
 	this.Reg_35_SEU = "SEU in Register 35: " + bin_string(this.Reg_35_SEU.value,1);
 	this.Reg_34_SEU = "SEU in Register 34: " + bin_string(this.Reg_34_SEU.value,1);
 	this.Reg_33_SEU = "SEU in Register 33: " + bin_string(this.Reg_33_SEU.value,1);
@@ -171,54 +168,6 @@ Reg1 : function(sig) {
 	this.ic_1_lp_ce.text = "Correctable error in ABC LP packet metadata IC 1: " + ((this.ic_1_lp_ce.value==this.ic_1_lp_ce.checked)?'Yes':'No');
 	this.ic_0_lp_ce.text = "Correctable error in ABC LP packet metadata IC 0: " + ((this.ic_0_lp_ce.value==this.ic_0_lp_ce.checked)?'Yes':'No');
 },
-Reg2 : function(sig) {
-	this.unused1 = {value:(sig>>27)&0x1f,type:'unused'};
-	this.ic_10_pr_uce = {value:(sig>>26)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_9_pr_uce = {value:(sig>>25)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_8_pr_uce = {value:(sig>>24)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_7_pr_uce = {value:(sig>>23)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_6_pr_uce = {value:(sig>>22)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_5_pr_uce = {value:(sig>>21)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_4_pr_uce = {value:(sig>>20)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_3_pr_uce = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_2_pr_uce = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_1_pr_uce = {value:(sig>>17)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_0_pr_uce = {value:(sig>>16)&1,type:'checkbox',checked:1,unchecked:0};
-	this.unused2 = {value:(sig>>11)&0x1f,type:'unused'};
-	this.ic_10_pr_ce = {value:(sig>>10)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_9_pr_ce = {value:(sig>>9)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_8_pr_ce = {value:(sig>>8)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_7_pr_ce = {value:(sig>>7)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_6_pr_ce = {value:(sig>>6)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_5_pr_ce = {value:(sig>>5)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_4_pr_ce = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_3_pr_ce = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_2_pr_ce = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_1_pr_ce = {value:(sig>>1)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_0_pr_ce = {value:(sig>>0)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ic_10_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 10: " + ((this.ic_10_pr_uce.value==this.ic_10_pr_uce.checked)?'Yes':'No');
-	this.ic_9_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 9: " + ((this.ic_9_pr_uce.value==this.ic_9_pr_uce.checked)?'Yes':'No');
-	this.ic_8_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 8: " + ((this.ic_8_pr_uce.value==this.ic_8_pr_uce.checked)?'Yes':'No');
-	this.ic_7_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 7: " + ((this.ic_7_pr_uce.value==this.ic_7_pr_uce.checked)?'Yes':'No');
-	this.ic_6_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 6: " + ((this.ic_6_pr_uce.value==this.ic_6_pr_uce.checked)?'Yes':'No');
-	this.ic_5_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 5: " + ((this.ic_5_pr_uce.value==this.ic_5_pr_uce.checked)?'Yes':'No');
-	this.ic_4_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 4: " + ((this.ic_4_pr_uce.value==this.ic_4_pr_uce.checked)?'Yes':'No');
-	this.ic_3_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 3: " + ((this.ic_3_pr_uce.value==this.ic_3_pr_uce.checked)?'Yes':'No');
-	this.ic_2_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 2: " + ((this.ic_2_pr_uce.value==this.ic_2_pr_uce.checked)?'Yes':'No');
-	this.ic_1_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 1: " + ((this.ic_1_pr_uce.value==this.ic_1_pr_uce.checked)?'Yes':'No');
-	this.ic_0_pr_uce.text = "Uncorrectable error in ABC PR packet metadata IC 0: " + ((this.ic_0_pr_uce.value==this.ic_0_pr_uce.checked)?'Yes':'No');
-	this.ic_10_pr_ce.text = "Correctable error in ABC PR packet metadata IC 10: " + ((this.ic_10_pr_ce.value==this.ic_10_pr_ce.checked)?'Yes':'No');
-	this.ic_9_pr_ce.text = "Correctable error in ABC PR packet metadata IC 9: " + ((this.ic_9_pr_ce.value==this.ic_9_pr_ce.checked)?'Yes':'No');
-	this.ic_8_pr_ce.text = "Correctable error in ABC PR packet metadata IC 8: " + ((this.ic_8_pr_ce.value==this.ic_8_pr_ce.checked)?'Yes':'No');
-	this.ic_7_pr_ce.text = "Correctable error in ABC PR packet metadata IC 7: " + ((this.ic_7_pr_ce.value==this.ic_7_pr_ce.checked)?'Yes':'No');
-	this.ic_6_pr_ce.text = "Correctable error in ABC PR packet metadata IC 6: " + ((this.ic_6_pr_ce.value==this.ic_6_pr_ce.checked)?'Yes':'No');
-	this.ic_5_pr_ce.text = "Correctable error in ABC PR packet metadata IC 5: " + ((this.ic_5_pr_ce.value==this.ic_5_pr_ce.checked)?'Yes':'No');
-	this.ic_4_pr_ce.text = "Correctable error in ABC PR packet metadata IC 4: " + ((this.ic_4_pr_ce.value==this.ic_4_pr_ce.checked)?'Yes':'No');
-	this.ic_3_pr_ce.text = "Correctable error in ABC PR packet metadata IC 3: " + ((this.ic_3_pr_ce.value==this.ic_3_pr_ce.checked)?'Yes':'No');
-	this.ic_2_pr_ce.text = "Correctable error in ABC PR packet metadata IC 2: " + ((this.ic_2_pr_ce.value==this.ic_2_pr_ce.checked)?'Yes':'No');
-	this.ic_1_pr_ce.text = "Correctable error in ABC PR packet metadata IC 1: " + ((this.ic_1_pr_ce.value==this.ic_1_pr_ce.checked)?'Yes':'No');
-	this.ic_0_pr_ce.text = "Correctable error in ABC PR packet metadata IC 0: " + ((this.ic_0_pr_ce.value==this.ic_0_pr_ce.checked)?'Yes':'No');
-},
 Reg3 : function(sig) {
 	this.lcb_frame_raw = {value:(sig>>16)&0xffff,type:'input'};
 	this.R3L1_frame_raw = {value:sig&0xffff,type:'input'};
@@ -232,39 +181,109 @@ Reg4 : function(sig) {
 	this.R3L1_errcount.text = "R3L1 error count: " + this.R3L1_errcount.value;
 },
 Reg5 : function(sig) {
-	this.unused = {value:(sig>>10)&0x3fffff,type:'unused'};
-	this.ADCval = {value:sig&0x3ff,type:'input'};
+    this.unused1 = {value:(sig>>19)&0x3f, type:'unused'};
+    this.ana_set = {value:(sig>>16)&0x3f, type:'input'};
+	this.unused2 = {value:(sig>>10)&0x3fffff,type:'unused'};
+	this.ADCval = {value:(sig>>9)&0x3ff,type:'input'};
 	this.ADCval.text = "Measured ADC value: " + this.ADCval.value;
+    this.ana_set.text = "Analog MUX setting:" +this.ana_set.value;
 },
 Reg6 : function(sig) {
-	this.unused = {value:(sig>>2)&0x3fffffff,type:'unused'};
+    this.unused1 = {value:(sig>>8)&0x3fff, type:'unused'};
+    this.unused2 = {value:(sig>>5)&0x3f, type:'unused'};
+    this.prlp_sending = {value:(sig>>4), type:'select', options:{0:'disabled', 1:'enabled'}};
+	this.unused3 = {value:(sig>>2)&0x3fffffff,type:'unused'};
 	this.GPI1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.GPI0 = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
+    this.prlp_sending.text = "Sending PRLP commands to ABCs: " + this.prlp_sending.options[this.prlp_sending.value];
 	this.GPI1.text = "Status of GPI1 pad: " + this.GPI1.options[this.GPI1.value];
 	this.GPI0.text = "Status of GPI0 pad: " + this.GPI0.options[this.GPI0.value];
 },
+Reg7 : function(sig) {
+    this.ICsramOCC_ch_10 = {value:(sig>>28)&0x3f, type:'input'};
+    this.unused = {value:(sig>>11)&0x3ff, type:'unused'};
+    this.LP_IC_Full = {value:(sig>>0)&0x3ff, type:'input'};
+    this.ICsramOCC_ch_10.text = "IC 10 LP Buffer Occupancy: " +this.ICsramOCC_ch_10.value;
+    this.LP_IC_Full.text = "IC full flags: " + this.LP_IC_Full.value;
+},
+Reg8 : function(sig) {
+    this.ICsramOCC_ch_9 = {value:(sig>>28)&0x3f, type:'input'};
+    this.ICsramOCC_ch_8 = {value:(sig>>24)&0x3f, type:'input'};
+    this.unused = {value:(sig>>22)&0x3f, type:'unused'};
+    this.IC_ABCoutstanding_Ch_10 = {value:(sig>>20)&0x3f, type:'input'};
+    this.IC_ABCoutstanding_Ch_9 = {value:(sig>>18)&0x3f, type:'input'};
+    this.IC_ABCoutstanding_Ch_8 = {value:(sig>>16)&0x3f, type:'input'};
+    this.IC_ABCoutstanding_Ch_7 = {value:(sig>>14)&0x3f, type:'input'};
+    this.IC_ABCoutstanding_Ch_6 = {value:(sig>>12)&0x3f, type:'input'};
+    this.IC_ABCoutstanding_Ch_5 = {value:(sig>>10)&0x3f, type:'input'};
+    this.IC_ABCoutstanding_Ch_4 = {value:(sig>>8)&0x3f, type:'input'};
+    this.IC_ABCoutstanding_Ch_3 = {value:(sig>>6)&0x3f, type:'input'};
+    this.IC_ABCoutstanding_Ch_2 = {value:(sig>>4)&0x3f, type:'input'};
+    this.IC_ABCoutstanding_Ch_1 = {value:(sig>>2)&0x3f, type:'input'};
+    this.IC_ABCoutstanding_Ch_0 = {value:(sig>>0)&0x3f, type:'input'};
+    this.ICsramOCC_ch_9.text = "IC 9 LP Buffer Occupancy: " +this.ICsramOCC_ch_9.value;
+    this.ICsramOCC_ch_8.text = "IC 8 LP Buffer Occupancy: " +this.ICsramOCC_ch_8.value;
+    this.IC_ABCoutstanding_Ch_10.text = "IC 10 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_10.value;
+    this.IC_ABCoutstanding_Ch_9.text = "IC 9 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_9.value;
+    this.IC_ABCoutstanding_Ch_8.text = "IC 8 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_8.value;
+    this.IC_ABCoutstanding_Ch_7.text = "IC 7 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_7.value;
+    this.IC_ABCoutstanding_Ch_6.text = "IC 6 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_6.value;
+    this.IC_ABCoutstanding_Ch_5.text = "IC 5 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_5.value;
+    this.IC_ABCoutstanding_Ch_4.text = "IC 4 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_4.value;
+    this.IC_ABCoutstanding_Ch_3.text = "IC 3 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_3.value;
+    this.IC_ABCoutstanding_Ch_2.text = "IC 2 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_2.value;
+    this.IC_ABCoutstanding_Ch_1.text = "IC 1 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_1.value;
+    this.IC_ABCoutstanding_Ch_0.text = "IC 0 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_0.value;
+},
+Reg9 : function(sig) {
+    this.ICsramOCC_ch_7 = {value:(sig>>28)&0x3f, type:'input'};
+    this.ICsramOCC_ch_6 = {value:(sig>>24)&0x3f, type:'input'};
+    this.ICsramOCC_ch_5 = {value:(sig>>20)&0x3f, type:'input'};
+    this.ICsramOCC_ch_4 = {value:(sig>>16)&0x3f, type:'input'};
+    this.ICsramOCC_ch_3 = {value:(sig>>12)&0x3f, type:'input'};
+    this.ICsramOCC_ch_2 = {value:(sig>>8)&0x3f, type:'input'};
+    this.ICsramOCC_ch_1 = {value:(sig>>4)&0x3f, type:'input'};
+    this.ICsramOCC_ch_0 = {value:(sig>>0)&0x3f, type:'input'};
+    this.ICsramOCC_ch_7.text = "IC 7 LP Buffer Occupancy: " +this.ICsramOCC_ch_7.value;
+    this.ICsramOCC_ch_6.text = "IC 6 LP Buffer Occupancy: " +this.ICsramOCC_ch_6.value;
+    this.ICsramOCC_ch_5.text = "IC 5 LP Buffer Occupancy: " +this.ICsramOCC_ch_5.value;
+    this.ICsramOCC_ch_4.text = "IC 4 LP Buffer Occupancy: " +this.ICsramOCC_ch_4.value;
+    this.ICsramOCC_ch_3.text = "IC 3 LP Buffer Occupancy: " +this.ICsramOCC_ch_3.value;
+    this.ICsramOCC_ch_2.text = "IC 2 LP Buffer Occupancy: " +this.ICsramOCC_ch_2.value;
+    this.ICsramOCC_ch_1.text = "IC 1 LP Buffer Occupancy: " +this.ICsramOCC_ch_1.value;
+    this.ICsramOCC_ch_0.text = "IC 0 LP Buffer Occupancy: " +this.ICsramOCC_ch_0.value;
+},
+Reg10 : function(sig) {
+    this.unused1 = {value:(sig>>21)&0x3ff, type:'unused'};
+    this.pr_rr_occ = {value:(sig>>16)&0x3f, type:'input'};
+    this.unused2 = {value:(sig>>8)&0x3f, type:'unused'};
+    this.lp_rr_occ = {value:(sig>>0)&0x3f, type:'input'};
+    this.pr_rr_occ.text = "PR readout request queue occupancy: " + this.pr_rr_occ.value;
+    this.lp_rr_occ.text = "LP readout request queue occupancy: " + this.lp_rr_occ.value;
+},
 Reg15 : function(sig) {
 	this.lcb_frame_raw = {value:(sig>>16)&0xffff,type:'input'};
-	this.R3L1_frame_raw = {value:(sig>>7)&0x1ff,type:'input'};
+	this.lcb_scmd_errcount = {value:(sig>>8)&0x3f, type:'input'};
+    this.lcb_scmd_err = {value:(sig>>7)&1,type:'checkbox',checked:1,unchecked:0};
 	this.R3L1_errcount_ovfl = {value:(sig>>6)&1,type:'checkbox',checked:1,unchecked:0};
 	this.ePllInstantLock = {value:(sig>>5)&1,type:'checkbox',checked:1,unchecked:0};
-	this.lcb_scmd_err = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+	this.k2_pending = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
 	this.lcb_errcount_ovfl = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
 	this.lcb_decode_err = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
 	this.lcb_locked = {value:(sig>>1)&1,type:'checkbox',checked:1,unchecked:0};
 	this.R3L1_locked = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
 	this.lcb_frame_raw.text = "LCB Raw Frame: " + this.lcb_frame_raw.value;
-	this.R3L1_frame_raw.text = "R3L1 Raw Frame: " + this.R3L1_frame_raw.value;
+	this.lcb_scmd_errcount.text = "LCB slow control error count: " + this.lcb_scmd_errcount.value;
+    this.lcb_scmd_err.text = "LCB Slow Command Error (not latched): " + (this.lcb_scmd_err.checked?'Yes':'No');
 	this.R3L1_errcount_ovfl.text = "R3L1 Error Counter Overflowed: " + (this.R3L1_errcount_ovfl.checked?'Yes':'No');
 	this.ePllInstantLock.text = "PLL Lock Indicator: " + (this.ePllInstantLock.checked?'Yes':'No');
-	this.lcb_scmd_err.text = "LCB Slow Command Error: " + (this.lcb_scmd_err?'Yes':'No');
+	this.k2_pending.text = "Pending K2 Slow Command: " + (this.k2_pending.checked?'Yes':'No');
 	this.lcb_errcount_ovfl.text = "LCB Error Counter Overflowed: " + (this.lcb_errcount_ovfl.checked?'Yes':'No');
 	this.lcb_decode_err.text = "LCB Decode Error: " + (this.lcb_decode_err.checked?'Yes':'No');
 	this.lcb_locked.text = "LCB Locked Flag: " + (this.lcb_locked.checked?'Yes':'No');
 	this.R3L1_locked.text = "R3L1 Locked Flag: " + (this.R3L1_locked.checked?'Yes':'No');
 },
 Reg16 : function(sig) {
-	this.unused = {value:(sig>>5)&0x7ffffff,type:'unused'};
 	this.R3L1_errcount_clr = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
 	this.lcb_errcount_clr = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
 	this.eFuseL = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
@@ -278,7 +297,6 @@ Reg16 : function(sig) {
 },
 Reg17 : function(sig) {
 	this.comm_id = {value:(sig>>28)&0xf,type:'input'};
-	this.unused = {value:(sig>>24)&0xf,type:'unused'};
 	this.fuse_id = {value:sig&0xffffff,type:'input'};
 	this.comm_id.text = "Communications ID: " + this.comm_id.value;
 	this.fuse_id.text = "eFuse Serial Number: " + this.fuse_id.value;
@@ -330,43 +348,23 @@ Reg34 : function(sig) {
 	this.fd_di8_fD.text  = "ABC Data In 8 Fine Delay: " + this.fd_di8_fD.value;
 },
 Reg35 : function(sig) {
-	this.unused1 = {value:(sig>>24)&0xff,type:'unused'};
-	this.EnPhase={value:(sig>>16)&0xff,type:'binput',n:8};
-	this.unused2 = {value:(sig>>14)&3,type:'unused'};
-	this.RefF ={value:(sig>>12)&3,type:'select',options:{1:'40 MHz',2:'80 MHz',3:'160 MHz'}};
-   	this.Res={value:(sig>>8)&0xf,type:'select',options:{0:'0.5 kOhm',1:'1 kOhm',2:'1.5 kOhm',3:'2 kOhm',4:'2.5 kOhm',
+	this.unused = {value:(sig>>29)&0xff,type:'unused'};
+    this.ePllPhase160MHz = {value:(sig>>24)&0x3f,type:'checkbox',checked:1,unchecked:0};
+	this.ePllEnablePhase = {value:(sig>>16)&0x3f,type:'binput',n:8};
+	this.ePllReferenceFrequency = {value:(sig>>12)&0x3f,type:'select',options:{1:'40 MHz',2:'80 MHz',3:'160 MHz'}};
+   	this.ePllRes={value:(sig>>8)&0xf,type:'select',options:{0:'0.5 kOhm',1:'1 kOhm',2:'1.5 kOhm',3:'2 kOhm',4:'2.5 kOhm',
             5:'3 kOhm',6:'3.5 kOhm',7:'4 kOhm',8:'4.5 kOhm',9:'5 kOhm',10: '5.5 kOhm',11:'6 KOhm',12:'6.5 kOhm'
 		,13:'7 kOhm',14:'7.5 kOhm',15:'8 kOhm'}}; 
-	this.unused3 = {value:(sig>>6)&3,type:'unused'};
-   	this.Cap={value:(sig>>4)&3, type:'select', options:{0:'30 pF',1:'40 pF',2:'50 pF',3:'70 pF'}}; 
-   	this.Icp={value:sig&0xf,type:'select',options:{0:'0 uA',1:'8.5 uA',2:'17 uA',3:'25.5 uA',4:'34 uA',5:'42.5 uA',
+   	this.ePllCap={value:(sig>>4)&3, type:'select', options:{0:'30 pF',1:'40 pF',2:'50 pF',3:'70 pF'}}; 
+   	this.ePllIcp={value:sig&0xf,type:'select',options:{0:'0 uA',1:'8.5 uA',2:'17 uA',3:'25.5 uA',4:'34 uA',5:'42.5 uA',
 						  6:'51 uA',7:'59.5 uA',8:'68 uA',9:'76.5 uA',10:'85 uA',11:'93.5 uA',
 						  12:'102 uA',13:'110.5 uA',14:'119 uA',15:'127.5 uA'}};
-	this.EnPhase.text = "Enable specific phases: " + bin_string(this.EnPhase.value,8);
-	this.RefF.text = "ePLL Reference Frequency: " + this.RefF.options[this.RefF.value];
-	this.Res.text = "ePLL Resistance: " + this.Res.options[this.Res.value];
-	this.Cap.text = "ePLL Loop Filter Capacitance: " + this.Cap.options[this.Cap.value];
-	this.Icp.text = "ePLL Charge Pump Current: " + this.Icp.options[this.Icp.value];
-},
-Reg36 : function(sig) {
-	this.unused = {value:(sig>>12)&0xfffff,type:'unused'};
-	this.PhaseC={value:(sig>>8)&0xf, type:'select', options:{0:'0 deg', 1:'22.5 deg', 2:'45 deg', 3:'67.5 deg', 4:'90 deg', 5:'112.5 deg', 6:'135 deg', 7:'157.5 deg', 8:'180 deg', 9:'202.5 deg', 10:'225 deg', 11:'247.5 deg', 12:'270 deg', 13:'292.5 deg', 14:'315 deg', 15:'337.5 deg'}};
-   	this.PhaseB={value:(sig>>4)&0xf, type: 'select', options: {0:'0 deg', 1:'22.5 deg', 2:'45 deg', 3:'67.5 deg', 4:'90 deg', 5:'112.5 deg', 6:'135 deg', 7:'157.5 deg', 8:'180 deg', 9:'202.5 deg', 10:'225 deg', 11:'247.5 deg', 12:'270 deg', 13:'292.5 deg', 14:'315 deg', 15:'337.5 deg'}};
-   	this.PhaseA={value:sig&0xf, type: 'select', options: {0:'0 deg', 1:'22.5 deg', 2:'45 deg', 3:'67.5 deg', 4:'90 deg', 5:'112.5 deg', 6:'135 deg', 7:'157.5 deg', 8:'180 deg', 9:'202.5 deg', 10:'225 deg', 11:'247.5 deg', 12:'270 deg', 13:'292.5 deg', 14:'315 deg', 15:'337.5 deg'}};
-	this.PhaseC.text = "Phase of clk320C: " + this.PhaseC.options[this.PhaseC.value];
-	this.PhaseB.text = "Phase of clk320B: " + this.PhaseB.options[this.PhaseB.value];
-	this.PhaseA.text = "Phase of clk320A: " + this.PhaseA.options[this.PhaseA.value];
-},
-Reg37 : function(sig) {
-	this.unused1 = {value:(sig>>21)&0x7ff,type:'unused'};
-	this.PhaseC={value:(sig>>16)&0x1f,type:'select',options:{0:'0 deg',1:'11.25 deg',2:'22.5 deg', 3:'33.75 deg',4:'45 deg',5:'56.25 deg',6:'67.5 deg',7:'78.75 deg',8:'90 deg',9:'101.25 deg',10:'112.5 deg',11:'123.75 deg',12:'135 deg',13:'146.25 deg',14:'157.5 deg',15:'168.75 deg',16:'180 deg',17:'191.25 deg',18:'202.5 deg',19:'213.75 deg',20:'225 deg',21:'236.25 deg',22:'247.5 deg',23:'258.75 deg',24:'270 deg',25:'281.25 deg',26:'292.5 deg',27:'303.75 deg',28:'315 deg',29:'326.25 deg',30:'337.5 deg',31:'348.75 deg'}};
-	this.unused2 = {value:(sig>>13)&7,type:'unused'};
-	this.PhaseB={value:(sig>>8)&0x1f,type:'select',options:{0:'0 deg',1:'11.25 deg',2:'22.5 deg', 3:'33.75 deg',4:'45 deg',5:'56.25 deg',6:'67.5 deg',7:'78.75 deg',8:'90 deg',9:'101.25 deg',10:'112.5 deg',11:'123.75 deg',12:'135 deg',13:'146.25 deg',14:'157.5 deg',15:'168.75 deg',16:'180 deg',17:'191.25 deg',18:'202.5 deg',19:'213.75 deg',20:'225 deg',21:'236.25 deg',22:'247.5 deg',23:'258.75 deg',24:'270 deg',25:'281.25 deg',26:'292.5 deg',27:'303.75 deg',28:'315 deg',29:'326.25 deg',30:'337.5 deg',31:'348.75 deg'}};
-	this.unused3 = {value:(sig>>5)&7,type:'unused'};
-	this.PhaseA={value:sig&0x1f,type:'select',options:{0:'0 deg',1:'11.25 deg',2:'22.5 deg', 3:'33.75 deg',4:'45 deg',5:'56.25 deg',6:'67.5 deg',7:'78.75 deg',8:'90 deg',9:'101.25 deg',10:'112.5 deg',11:'123.75 deg',12:'135 deg',13:'146.25 deg',14:'157.5 deg',15:'168.75 deg',16:'180 deg',17:'191.25 deg',18:'202.5 deg',19:'213.75 deg',20:'225 deg',21:'236.25 deg',22:'247.5 deg',23:'258.75 deg',24:'270 deg',25:'281.25 deg',26:'292.5 deg',27:'303.75 deg',28:'315 deg',29:'326.25 deg',30:'337.5 deg',31:'348.75 deg'}};
-	this.PhaseC.text = "Phase of clk160C: " + this.PhaseC.options[this.PhaseC.value];
-	this.PhaseB.text = "Phase of clk160B: " + this.PhaseB.options[this.PhaseB.value];
-	this.PhaseA.text = "Phase of clk160A: " + this.PhaseA.options[this.PhaseA.value];
+    this.ePllPhase160MHz.text = "Phase of clk160: " + (this.ePllPhase160MHz.checked?'Yes':'No');
+	this.ePllEnablePhase.text = "Enable specific phases: " + bin_string(this.EnPhase.value,8);
+	this.ePllReferenceFrequency.text = "ePLL Reference Frequency: " + this.RefF.options[this.RefF.value];
+	this.ePllRes.text = "ePLL Resistance: " + this.Res.options[this.Res.value];
+	this.ePllCap.text = "ePLL Loop Filter Capacitance: " + this.Cap.options[this.Cap.value];
+	this.ePllIcp.text = "ePLL Charge Pump Current: " + this.Icp.options[this.Icp.value];
 },
 Reg38 : function(sig) {
 	this.unused = {value:(sig>>28)&0xf,type:'unused'};
@@ -426,18 +424,21 @@ Reg40 : function(sig) {
 	this.IC_enable.text = "Input channel enables: " + bin_string(this.IC_enable.value,11);
 },
 Reg41 : function(sig) {
-	this.unused1 = {value:(sig>>19)&0x1fff,type:'unused'};
+	this.unused1 = {value:(sig>>21)&0x1fff,type:'unused'};
+    this.clk_disable_en = {value:(sig>>20)&1,type:'checkbox',checked:1,unchecked:0};
+    this.unused2 = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
 	this.prbs_mode = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
 	this.encode_8b10b = {value:(sig>>17)&1,type:'select',options:{0:'no encoding',1:'8b10b encoding'}};
 	this.encode_cntl = {value:(sig>>16)&1,type:'select',options:{0:'Use pad',1:'Use register to control output encoding'}};
-	this.unused2 = {value:(sig>>15)&1,type:'unused'};
+	this.unused3 = {value:(sig>>15)&1,type:'unused'};
 	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0:'16',1:'1',2:'2',3:'4',4:'8'}};
-	this.unused3 = {value:(sig>>10)&3,type:'unused'};
+	this.unused4 = {value:(sig>>10)&0x3f,type:'unused'};
 	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0:'Physics',1:'RegRead',2:'PackTrans',3:'FullTrans'}};
-	this.unused4 = {value:(sig>>5)&7,type:'unused'};
+	this.unused5 = {value:(sig>>5)&0x3f,type:'unused'};
 	this.readout_speed = {value:(sig>>4)&1,type:'select',options:{0:'320 MHz',1:'640 MHz'}};
-	this.unused5 = {value:(sig>>1)&7,type:'unused'};
+	this.unused6 = {value:(sig>>1)&0x3f,type:'unused'};
 	this.trigger_mode= {value:sig&1,type:'select',options:{0:'Multilevel trigger',1:'Single level trigger'}};
+    this.clk_disable_en.text = "Clock Phase Disabled: " + ((this.clk_disable_en.value==this.clk_disable_en.checked)?'Yes':'No');
 	this.prbs_mode.text = "PRBS Mode: " + ((this.prbs_mode.value==this.prbs_mode.checked)?'Yes':'No');
 	this.encode_8b10b.text = "Encoding: " + this.encode_8b10b.options[this.encode_8b10b.value];
 	this.encode_cntl.text = "Encoding control: " + this.encode_cntl.options[this.encode_cntl.value];
@@ -447,18 +448,21 @@ Reg41 : function(sig) {
 	this.trigger_mode.text = "Trigger Mode: " + this.trigger_mode.options[this.trigger_mode.value];
 },
 Reg42 : function(sig) {
-	this.unused1 = {value:(sig>>19)&0x1fff,type:'unused'};
+	this.unused1 = {value:(sig>>21)&0x1fff,type:'unused'};
+    this.clk_disable_en = {value:(sig>>20)&1,type:'checkbox',checked:1,unchecked:0};
+    this.unused2 = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
 	this.prbs_mode = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
 	this.encode_8b10b = {value:(sig>>17)&1,type:'select',options:{0:'no encoding',1:'8b10b encoding'}};
 	this.encode_cntl = {value:(sig>>16)&1,type:'select',options:{0:'Use pad',1:'Use register to control output encoding'}};
-	this.unused2 = {value:(sig>>15)&1,type:'unused'};
+	this.unused3 = {value:(sig>>15)&1,type:'unused'};
 	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0:'16',1:'1',2:'2',3:'4',4:'8'}};
-	this.unused3 = {value:(sig>>10)&3,type:'unused'};
+	this.unused4 = {value:(sig>>10)&0x3f,type:'unused'};
 	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0:'Physics',1:'RegRead',2:'PackTrans',3:'FullTrans'}};
-	this.unused4 = {value:(sig>>5)&7,type:'unused'};
+	this.unused5 = {value:(sig>>5)&0x3f,type:'unused'};
 	this.readout_speed = {value:(sig>>4)&1,type:'select',options:{0:'320 MHz',1:'640 MHz'}};
-	this.unused5 = {value:(sig>>1)&7,type:'unused'};
+	this.unused6 = {value:(sig>>1)&0x3f,type:'unused'};
 	this.trigger_mode= {value:sig&1,type:'select',options:{0:'Multilevel trigger',1:'Single level trigger'}};
+    this.clk_disable_en.text = "Clock Phase Disabled: " + ((this.clk_disable_en.value==this.clk_disable_en.checked)?'Yes':'No');
 	this.prbs_mode.text = "PRBS Mode: " + ((this.prbs_mode.value==this.prbs_mode.checked)?'Yes':'No');
 	this.encode_8b10b.text = "Encoding: " + this.encode_8b10b.options[this.encode_8b10b.value];
 	this.encode_cntl.text = "Encoding control: " + this.encode_cntl.options[this.encode_cntl.value];
@@ -468,41 +472,40 @@ Reg42 : function(sig) {
 	this.trigger_mode.text = "Trigger Mode: " + this.trigger_mode.options[this.trigger_mode.value];
 },
 Reg43 : function(sig) {
-	this.unused1 = {value:(sig>>21)&0x7ff,type:'unused'};
+	this.clk_disable_sel = {value:(sig>>28)&0x3f,type:'input'};
+    this.clk_disable = {value:(sig>>24)&0x3f,type:'input'};
 	this.efuse_prog_bit = {value:(sig>>16)&0x1f,type:'binput',n:5};
-	this.unused2 = {value:(sig>>14)&3,type:'unused'};
 	this.GPO1 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.GPO0 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-	this.unused3 = {value:(sig>>9)&7,type:'unused'};
 	this.MaskHPR = {value:(sig>>8)&1,type:'checkbox',checked:1,unchecked:0};
-	this.unused4 = {value:(sig>>5)&7,type:'unused'};
+    this.BGvdd_cnt_en = {value:(sig>>7)&1,type:'checkbox',checked:1,unchecked:0};
+	this.unused = {value:(sig>>6)&1,type:'unused'};
+    this.Bg_RangeLow = {value:(sig>>5)&1,type:'input'};
 	this.BG_setting = {value:sig&0x1f,type:'input'};
+    this.clk_disable_sel.text ="Disabled clock: " + this.clk_disable_sel.value;
+    this.clk_disable.text = "Disabled Clock Phase: " + this.clk_disable.value;
 	this.efuse_prog_bit.text = "Bit of eFuse to set to '1' when programming: " + bin_string(this.efuse_prog_bit.value,5);
 	this.GPO1.text = "General Purpose Output pad 1 control: " + this.GPO1.options[this.GPO1.value];	
 	this.GPO0.text = "General Purpose Output pad 0 control: " + this.GPO0.options[this.GPO0.value];
 	this.MaskHPR.text = "Prevent HPR packets from being sent: " + ((this.MaskHPR.value==this.MaskHPR.checked)?'Yes':'No');
+    this.BGvdd_cnt_en.text = "Bandgap control enabled: " + ((this.BGvdd_cnt_en.value==this.BGvdd_cnt_en.checked)?'Yes':'No');
+    this.Bg_RangeLow.text = "Low Bandgap range: " + this.Bg_RangeLow.value;
 	this.BG_setting.text = "Bandgap setting: " + this.BG_setting.value;
 },
 Reg44 : function(sig) {
-	this.unused1 = {value:(sig>>27)&0x1f,type:'unused'};
 	this.BCMM_squelch = {value:(sig>>16)&0x7ff,type:'binput',n:11};
-	this.unused2 = {value:(sig>>10)&0x3f,type:'unused'};
 	this.BCIDrstDelay = {value:sig&0x1ff,type:'input'};
 	this.BCMM_squelch.text = "Mask error block generation if only these channels have BCID mismatch errors: " + bin_string(this.BCMM_squelch.value,11);
 	this.BCIDrstDelay.text = "Delay before BCR takes effect: " + this.BCIDrstDelay.value;
 },
 Reg45 : function(sig) {
-	this.unused1 = {value:(sig>>5)&0x3ffffff,type:'unused'};
 	this.AMAC_SSSH = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
-	this.unused2 = {value:(sig>>1)&7,type:'unused'};
 	this.ABC_ResetB = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
 	this.AMAC_SSSH.text = "AMAC Communications Reset: " + ((this.AMAC_SSSH.value==this.AMAC_SSSH.checked)?'Yes':'No');
 	this.ABC_ResetB.text = "ABCStars External Reset: " + ((this.ABC_ResetB.value==this.ABC_ResetB.checked)?'Yes':'No');
 },
 Reg46 : function(sig) {
-	this.unused1 = {value:(sig>>5)&0x3ffffff,type:'unused'};
 	this.AMAC_SSSH = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
-	this.unused2 = {value:(sig>>1)&7,type:'unused'};
 	this.ABC_ResetB = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
 	this.AMAC_SSSH.text = "AMAC Communications Reset: " + ((this.AMAC_SSSH.value==this.AMAC_SSSH.checked)?'Yes':'No');
 	this.ABC_ResetB.text = "ABCStars External Reset: " + ((this.ABC_ResetB.value==this.ABC_ResetB.checked)?'Yes':'No');
@@ -514,26 +517,16 @@ Reg47 : function(sig) {
 	this.lcb_errcount_thr.text =  "LCB error count threshold: " + this.lcb_errcount_thr.value;
 },
 Reg48 : function(sig) {
-	this.unused1 = {value:(sig>>24)&0x7f,type:'unused'};
 	this.therm_offset = {value:(sig>>20)&0xf,type:'select',options:{0: '0 mV',1:'16 mV',2:'30 mV',3:'46 mV',4:'79 mV',5:'95 mV', 6:'109 mV',7:'125 mV',8:'146 mV',9:'162 mV',10:'176 mV',11:'192 mV',12:'215 mV',13:'231 mV',14:'245 mV',15:'261 mV'}};
-	this.unused2 = {value:(sig>>19)&1,type:'unused'};
 	this.ana_set = {value:(sig>>16)&7,type:'select',options:{0:'Bandgap voltage',1:'Internal temperature',2:'Calibration input',3:'VDD_RAW',4:'VDD_REG',5:'Hybrid ground'}};
-	this.unused3 = {value:(sig>>15)&1,type:'unused'};
-	this.am_sw100 = {value:(sig>>14)&1,type:'binput',n:1};
-	this.am_sw80 = {value:(sig>>13)&1,type:'binput',n:1};
-	this.am_sw60 = {value:(sig>>12)&1,type:'select',options:{0:'1 mV desired ramp, 1 V range adapter Ref_Out',1:'0.75 mV desired ramp, 0.75 V range adapter Ref_Out'}};
-	this.unused4 = {value:(sig>>11)&1,type:'unused'};
-	this.am_sw210 = {value:(sig>>8)&7,type:'input'};
-	this.unused5 = {value:(sig>>5)&7,type:'unused'};
+	this.am_range = {value:(sig>>12)&1,type:'input'};
+    this.am_IntSlope = {value:(sig>>8)&0x3f,type:'input'};
 	this.am_calib = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
-	this.unused6 = {value:(sig>>1)&7,type:'unused'};
 	this.am_enable = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.therm_offset.text = "Output offset for temperature sensor: " + this.therm_offset.options[this.therm_offset.value];
 	this.ana_set.text = "Analog MUX select: " + this.ana_set.options[this.ana_set.value]; //
-	this.am_sw100.text = "Ramp gain setting sw_100: " + this.am_sw100.value;
-	this.am_sw80.text = "Ramp gain setting sw_80: " + this.am_sw80.value;
-	this.am_sw60.text = "Integrated DAC desired ramp AND Range adapter Ref_Out voltage: " + ((this.am_sw60.value==this.am_sw60.checked)?'Yes':'No');
-	this.am_sw210.text = "Ramp gain trim: " + this.am_sw210.value;
+	this.am_range.text = "AM Range: " + this.am_range.value;
+    this.am_IntSlope.text = "AM Int Slope: " +this.am_IntSlope;
 	this.am_calib.text = "Calibration Mode: " + ((this.am_calib.value==this.am_calib.checked)?'Yes':'No');
 	this.am_enable.text = "ADC: " + this.am_enable.options[this.am_enable.value];
 }
