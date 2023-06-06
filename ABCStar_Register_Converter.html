@@ -1,0 +1,2963 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+
+<script src="http://www.google-analytics.com/urchin.js"
+type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-67976-1";
+urchinTracker();
+</script>
+
+<title>ABCStar</title>
+<style>
+.right {
+	float:right;
+}
+.left {
+	float:left;
+}
+.line {
+	border-left: 3px solid black;
+	height: 670px;
+	margin-right: 10px;
+	margin-left: 10px;
+}
+</style>
+
+<script>
+
+//Default signals
+var defaults = {
+	Reg0:0,Reg1:0,Reg2:0xff,Reg3:0,Reg4:0x10c,Reg6:0,Reg7:0,Reg16:0,Reg17:0,Reg18:0,Reg19:0,Reg20:0,Reg21:0,Reg22:0,Reg23:0,Reg32:0,Reg33:0x444,Reg34:0xf,Reg35:0,Reg36:0,Reg37:0,Reg38:0xffff,Reg48:0,
+	Reg49:0,Reg50:0,Reg51:0,Reg52:0,Reg63:0,Reg64:0,Reg65:0,Reg66:0,Reg67:0,Reg68:0,Reg69:0,Reg70:0,Reg71:0,Reg72:0,
+	Reg73:0,Reg74:0,Reg75:0,Reg76:0,Reg77:0,Reg78:0,Reg79:0,
+	Reg80:0,Reg81:0,Reg82:0,Reg83:0,Reg84:0,Reg85:0,Reg86:0,Reg87:0,Reg88:0,Reg89:0,Reg90:0,Reg91:0,Reg92:0,Reg93:0,Reg94:0,Reg95:0,
+	Reg96:0,Reg97:0,Reg98:0,Reg99:0,Reg100:0,Reg101:0,Reg102:0,Reg103:0,Reg104:0,Reg105:0,Reg106:0,Reg107:0,Reg108:0,Reg109:0,Reg110:0,		 	Reg111:0,Reg112:0,Reg113:0,Reg114:0,Reg115:0,Reg116:0,Reg117:0,Reg118:0,Reg119:0,Reg120:0,Reg121:0,Reg122:0,Reg123:0,Reg124:0,Reg125:0,Reg126:0,
+	Reg127:0,Reg128:0,Reg129:0,Reg130:0,Reg131:0,Reg132:0,Reg133:0,Reg134:0,Reg135:0,Reg136:0,Reg137:0,Reg138:0,Reg139:0,Reg140:0,Reg141:0,Reg142:0,
+	Reg143:0,Reg144:0,Reg145:0,Reg146:0,Reg147:0,Reg148:0,Reg149:0,Reg150:0,Reg151:0,Reg152:0,Reg153:0,Reg154:0,Reg155:0,Reg156:0,Reg157:0,Reg158:0,
+	Reg159:0,Reg160:0,Reg161:0,Reg162:0,Reg163:0,Reg164:0,Reg165:0,Reg166:0,Reg167:0,Reg168:0,Reg169:0,Reg170:0,Reg171:0,Reg172:0,Reg173:0,Reg174:0,
+	Reg175:0
+};
+
+//Register Descriptions
+var RegDesc =  ["Register(s):Description",
+		"0:Special (RW)",
+		"1-4,6-7:Analog and DCS (RW)",
+		"16-23:Input (Mask) (RW)",
+		"32-38:Configuration (RW)",
+		"48-52:Status (RO)",
+		"63: High priority (RO)",
+		"64-95:TrimDAC 4 LSBs (RW)",
+		"96-103:TrimDac MSBs (RW)",
+		"104-111:Calibration Pulse Enables (RW)",
+		"112-175:Hit Counts (RO)" 
+		];
+
+window.onload = function() {
+	var outdiv = document.getElementById('rightHalf');
+	var regdiv = document.getElementById('reg');
+	var descdiv = document.getElementById('desc');
+	for (var i=0;i<RegDesc.length;i++) {
+		
+		descdiv.appendChild(document.createTextNode(RegDesc[i].split(':')[1]));
+		descdiv.appendChild(document.createElement('br'));
+		regdiv.appendChild(document.createTextNode(RegDesc[i].split(':')[0]));
+		regdiv.appendChild(document.createElement('br'));
+		
+		if (i==0) {descdiv.appendChild(document.createElement('hr'));regdiv.appendChild(document.createElement('hr'));}
+	}
+};
+
+
+//Maximum signal (for length testing)
+var max_test = 0xffffffff;
+
+//Namespace of register constructors
+var Registers = {
+	Reg0: function(sig) {
+		this.unused1 = {value:(sig>>6)&0x7ffffff,type:'unused'};
+		this.LCBErrCntClr = {value:(sig>>5)&1,type:'checkbox',checked:1,unchecked:0};
+		this.eFuseL = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+		this.TestHPR = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
+		this.HPRClear = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
+		this.write_disable = {value:(sig>>1)&1,type:'checkbox',checked:1,unchecked:0};
+		this.RRForce = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
+		this.write_disable.text = "Prevent write commands on registers other than 0: " + ((this.write_disable.value==this.write_disable.checked)?'Yes':'No');
+		this.HPRClear.text = "Interrupt periodic transmission of HPR register: " + 
+((this.HPRClear.value==this.HPRClear.checked)?'Yes':'No');	
+		this.TestHPR.text = "Transmit pulse acting as LCB_Locked bit false (to test HPR periodic packet transmission): " + ((this.TestHPR.value==this.TestHPR.checked)?'Yes':'No');
+		this.RRForce.text = "Transmit oldest pending 'Read register' packet after current even packet transmission: " + ((this.RRForce.value==this.RRForce.checked)?'Yes':'No');	
+		this.eFuseL.text = "Copy 24 programmed eFuse bits into the eFuse register: " + ((this.eFuseL.value==this.eFuseL.checked)?'Yes':'No');
+		this.LCBErrCntClr.text = "Clear LCB Error Counter: " + ((this.LCBErrCntClr.value==this.LCBErrCntClr.checked)?'Yes':'No');
+	},
+	Reg1: function(sig) {
+		this.unused1 = {value:(sig>>29)&7,type:'unused'};
+		this.btrange = {value:(sig>>24)&0x1f,type:'input'};
+		this.unused2 = {value:(sig>>21)&7,type:'unused'};
+		this.b8bref = {value:(sig>>16)&0x1f,type:'input'};
+		this.unused3 = {value:(sig>>13)&7,type:'unused'};
+		this.biref = {value:(sig>>8)&0x1f,type:'input'};
+		this.unused4 = {value:(sig>>5)&7,type:'unused'};
+		this.bvref = {value:sig&0x1f,type:'input'};
+		this.btrange.text = "Bit trim DAC range: " + this.btrange.value;
+		this.b8bref.text = "Internal bias for 8-bit threshold and calibration DACs: " + (this.b8bref.value==13)?'50 mV':(this.b8bref.value);
+		this.biref.text = "Internal bias for bias current generators: " + (this.biref.value==13)?'50 mV':(this.biref.value);
+		this.bvref.text = "Internal bias for VCS,VCD,VCSP,VBASE,VP: " + (this.bvref.value==13)?'50 mV':(this.bvref.value); 
+	},
+	Reg2: function(sig) {
+		this.unused1 = {value:(sig>>29)&7,type:'unused'};
+		this.bipre = {value:(sig>>24)&0x1f,type:'input'};
+		this.unused2 = {value:(sig>>21)&7,type:'unused'};
+		this.bifeed = {value:(sig>>16)&0x1f,type:'input'};
+		this.unused3 = {value:(sig>>13)&7,type:'unused'};
+		this.combias = {value:(sig>>8)&0x1f,type:'input'};
+		this.bvt = {value:sig&0xff,type:'input'};
+		this.bipre.text = "IPRE bias current (0=80uA,16=110uA,31=140uA): " + (this.bipre.value*(30.0/16.0)+80) + ' uA';
+		this.bifeed.text = "IFEED bias current (0=160nA,9=300nA,31=600nA): " + (this.bifeed.value*(140.0/9.0)+160) + 'nA';
+		this.combias.text = "Comparator bias current (0=5uA,16=9uA,31=13uA): " + (this.combias.value*0.25+5) + 'uA';
+		this.bvt.text = "Discriminator voltage (0V to -590mV, step of 2.3mV): " + (-1.0*this.bvt.value*2.3) + 'mV'; 
+	},
+	Reg3: function(sig) {
+		this.unused1 = {value:(sig>>24)&0xff,type:'unused'};
+		this.bcal = {value:(sig>>16)&0xff,type:'input'};
+		this.unused2 = {value:(sig>>14)&3,type:'unused'};
+		this.str_del = {value:(sig>>8)&0x3f,type:'input'};
+		this.unused3 = {value:(sig>>2)&0x3f,type:'unused'};
+		this.str_del_r = {value:sig&3,type:'select',options:{0:'strobe disabled',1:'delay 0 to 50ns',2:'delay 0 to 60 ns',3:'delay 0 to 80 ns'}};
+		this.bcal.text = "Calibration DAC voltage (0-150mV, step 0.586 mV): " + this.bcal.value*0.586 + 'mV';
+		this.str_del.text = "Calibration strobe delay: " + this.str_del.value;
+		this.str_del_r.text = "Calibration strobe delay range: " + this.str_del_r.options[this.str_del_r.value];
+	},
+	Reg4: function(sig) {
+		this.unused = {value:(sig>>9)&0x7fffff,type:'unused'};
+		this.ADC_en = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_ch3 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_ch2 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_ch1 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_ch0 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_bias = {value:sig&0xf,type:'input'};
+		this.ADC_en.text = "ADC operation: " + this.ADC_en.options[this.ADC_en.value];
+		this.ADC_ch3.text = "ADC Ch 3: " + this.ADC_ch3.options[this.ADC_ch3.value];
+		this.ADC_ch2.text = "ADC Ch 2: " + this.ADC_ch2.options[this.ADC_ch2.value];
+		this.ADC_ch1.text = "ADC Ch 1: " + this.ADC_ch1.options[this.ADC_ch1.value];
+		this.ADC_ch0.text = "ADC Ch 0: " + this.ADC_ch0.options[this.ADC_ch0.value];
+		this.ADC_bias.text = "ADC bias current (0-15): " + this.ADC_bias.value;
+
+	},
+	Reg6: function(sig) {
+		this.unused = {value:(sig>>17)&0x7fff,type:'unused'};
+		this.d_en_ctrl = {value:(sig>>16)&1,type:'select',options:{0:'maximum voltage',1:'enable tuning'}};
+		this.d_s = {value:sig&0xffff,type:'input'};
+		this.d_en_ctrl.text = "Regulator D output control: " + this.d_en_ctrl.options[this.d_en_ctrl.value];
+		this.d_s.text = "Regulator D output voltage: " + this.d_s.value;
+	},
+	Reg7: function(sig) {
+		this.a_en_ctrl = {value:(sig>>31)&1,type:'select',options:{0:'maximum voltage',1:'enable tuning'}};
+		this.a_s = {value:(sig>>15)&0x7fff,type:'input'};
+		this.btmux_d = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.btmux = {value:sig&0x3fff,type:'input'};
+		this.a_en_ctrl.text = "Regulator A output control: " + this.a_en_ctrl.options[this.a_en_ctrl.value];
+		this.a_s.text = "Regulator A output voltage: " + this.a_s.value;
+		this.btmux_d.text = "MUX output: " + this.btmux_d.options[this.btmux_d.value];
+		this.btmux.text = "MUX output voltage: " + this.btmux.value
+	},
+	Reg16: function(sig) {
+		this.ch31 = {value:sig,type:'binput',n:32};
+		this.ch31.text = "Ch 31-0 Masks. Masks the channel when bit TM (Reg 32) is clear. Injects a fixed pattern in the L0 pipeline when bit TM is set: " + bin_string(this.ch31.value,32);
+	},
+	Reg17: function(sig) {
+		this.ch63 = {value:sig,type:'binput',n:32};
+		this.ch63.text = "Ch 63-32 Masks. Masks the channel when bit TM (Reg 32) is clear. Injects a fixed pattern in the L0 pipeline when bit TM is set: " + bin_string(this.ch63.value,32);
+	},
+	Reg18: function(sig) {
+		this.ch95 = {value:sig,type:'binput',n:32};
+		this.ch95.text = "Ch 95-64 Masks. Masks the channel when bit TM (Reg 32) is clear. Injects a fixed pattern in the L0 pipeline when bit TM is set: " + bin_string(this.ch95.value,32);
+	},
+	Reg19: function(sig) {
+		this.ch127 = {value:sig,type:'binput',n:32};
+		this.ch127.text = "Ch 127-96 Masks. Masks the channel when bit TM (Reg 32) is clear. Injects a fixed pattern in the L0 pipeline when bit TM is set: " + bin_string(this.ch127.value,32);
+	},
+	Reg20: function(sig) {
+		this.ch159 = {value:sig,type:'binput',n:32};
+		this.ch159.text = "Ch 159-128 Masks. Masks the channel when bit TM (Reg 32) is clear. Injects a fixed pattern in the L0 pipeline when bit TM is set: " + bin_string(this.ch159.value,32);
+	},
+	Reg21: function(sig) {
+		this.ch191 = {value:sig,type:'binput',n:32};
+		this.ch191.text = "Ch 191-160 Masks. Masks the channel when bit TM (Reg 32) is clear. Injects a fixed pattern in the L0 pipeline when bit TM is set: " + bin_string(this.ch191.value,32);
+	},
+	Reg22: function(sig) {
+		this.ch223 = {value:sig,type:'binput',n:32};
+		this.ch223.text = "Ch 223-192 Masks. Masks the channel when bit TM (Reg 32) is clear. Injects a fixed pattern in the L0 pipeline when bit TM is set: " + bin_string(this.ch223.value,32);
+	},
+	Reg23: function(sig) {
+		this.ch255 = {value:sig,type:'binput',n:32};
+		this.ch255.text = "Ch 255-224 Masks. Masks the channel when bit TM (Reg 32) is clear. Injects a fixed pattern in the L0 pipeline when bit TM is set: " + bin_string(this.ch255.value,32);
+	},
+/*	Reg24: function(sig) {
+		this.chs = {value:sig,type:'binput',n:32};
+		this.chs.text = "Ch 31-0 L0 pipeline hit pattern bunch crossing: " + bin_string(this.chs.value,32);
+	},
+	Reg25: function(sig) {
+		this.chs = {value:sig,type:'binput',n:32};
+		this.chs.text = "Ch 63-32 L0 pipeline hit pattern bunch crossing: " + bin_string(this.chs.value,32);
+	},
+	Reg26: function(sig) {
+		this.chs = {value:sig,type:'binput',n:32};
+		this.chs.text = "Ch 95-64 L0 pipeline hit pattern bunch crossing: " + bin_string(this.chs.value,32);
+	},
+	Reg27: function(sig) {
+		this.chs = {value:sig,type:'binput',n:32};
+		this.chs.text = "Ch 127-96 L0 pipeline hit pattern bunch crossing: " + bin_string(this.chs.value,32);
+	},
+	Reg28: function(sig) {
+		this.chs = {value:sig,type:'binput',n:32};
+		this.chs.text = "Ch 159-128 L0 pipeline hit pattern bunch crossing: " + bin_string(this.chs.value,32);
+	},
+	Reg29: function(sig) {
+		this.chs = {value:sig,type:'binput',n:32};
+		this.chs.text = "Ch 191-160 L0 pipeline hit pattern bunch crossing: " + bin_string(this.chs.value,32);
+	},
+	Reg30: function(sig) {
+		this.chs = {value:sig,type:'binput',n:32};
+		this.chs.text = "Ch 223-192 L0 pipeline hit pattern bunch crossing: " + bin_string(this.chs.value,32);
+	},
+	Reg31: function(sig) {
+		this.chs = {value:sig,type:'binput',n:32};
+		this.chs.text = "Ch 225-224 L0 pipeline hit pattern bunch crossing: " + bin_string(this.chs.value,32);
+	}, */
+	Reg32: function(sig) {
+		this.unused1 = {value:(sig>>28)&0xf,type:'unused'};
+		this.TestPatt2 = {value:(sig>>24)&0xf,type:'binput',n:4};
+		this.TestPatt1 = {value:(sig>>20)&0xf,type:'binput',n:4};
+		this.unused2 = {value:(sig>>19)&1,type:'unused'};
+		this.TestPattEn = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.tm = {value:(sig>>16)&3,type:'select',options:{0:'Normal data taking',1:'Static test mode',2:'Test pulse mode'}};
+		this.unused3 = {value:(sig>>12)&0xf,type:'unused'};
+		this.RRmode = {value:(sig>>10)&3,type:'select',
+options:{0:'Read register disabled',1:'Read register if no pending LP/PR',2:'One read register if no PR pending, when RRforce set to one in register 0'}};
+		this.LPEn = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.PREn = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.unused4 = {value:(sig>>7)&1,type:'unused'};
+		this.MaskHPR = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.EnCount = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.TestPulseEn = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.unused5 = {value:sig&0xf,type:'unused'};
+		
+		this.tm.text = "Test Mode: " + this.tm.options[this.tm.value];
+		this.LPEn.text = "LP Triggers data transmission: " + this.LPEn.options[this.LPEn.value];
+		this.PREn.text = "PR Triggers data transmission: " + this.PREn.options[this.PREn.vakue];
+		this.TestPulseEn.text = "Digital test pulse functions at input of pipeline: " + this.TestPulseEn.options[this.TestPulseEn.value];
+		this.EnCount.text = "Counters at the end of the L0Buffer: " + this.EnCount.options[this.EnCount.value];
+		this.MaskHPR.text = "Enable preventing HPR packets from being transmitted when the LCB link status changes: " + this.MaskHPR.options[this.MaskHPR.value];
+		this.TestPattEn.text = "Test pulse pattern editing: " + this.TestPattEn.options[this.TestPattEn.value];
+		this.TestPatt1.text = "Unmask channels test pulse pattern: " + bin_string(this.TestPatt1.value,4);
+		this.TestPatt2.text = "Mask channels test pulse pattern: " + bin_string(this.TestPatt2.value,4);
+	},
+	Reg33: function(sig) {
+		this.unused1 = {value:(sig>>6)&0x3ffffff,type:'unused'};
+		this.CalPulsePolarity = {value:(sig>>5)&1,type:'binput',n:1};
+		this.CalPulseEn = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.unused2 = {value:(sig>>3)&1,type:'unused'};
+		this.CurrDriv = {value:sig&7,type:'input'};
+		this.CalPulsePolarity.text = "16BC wide calibration pulse polarity: " + this.CalPulsePolarity.value;
+		this.CurrDriv.text = "Current Drive of DAT outputs: " + this.CurrDriv.value;
+		this.CalPulseEn.text = "Analog pulse functions at channel inputs: " + this.CalPulseEn.options[this.CalPulseEn.value];
+	},
+	Reg34: function(sig) {
+		this.BCoffset = {value:(sig>>24)&0xff,type:'input'};
+		this.BCFlagEn = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.unused = {value:(sig>>9)&0x3fff,type:'unused'};
+		this.Latency = {value:sig&0xff,type:'input'};
+		this.Latency.text = "Latency in L0 pipeline in number of BC clocks: " + this.Latency.value;
+		this.BCoffset.text = "BCID counter delta between event time and L0 time: " + this.BCoffset.value;
+		this.BCFlagEn.text = "Flag generator for BCID count mismatch: " + this.BCFlagEn.options[this.BCFlagEn.value];
+	},
+	Reg35: function(sig) {
+		this.unused1 = {value:(sig>>19)&0x1fff,type:'unused'};
+		this.MCEn = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.MC = {value:(sig>>12)&0x3f,type:'input'};
+		this.unused2 = {value:(sig>>2)&0x3ff,type:'unused'};
+		this.DetMode = {value:sig&3,type:'select',options:{0:'Hit',1:'Level',2:'Edge',3:'Clear'}};
+		this.MCEn.text = "Maximum cluster editing: " + this.MCEn.options[this.MCEn.value];
+		this.MC.text = "Maximum clusters (if editing enabled): " + this.MC.value;
+		this.DetMode.text = "Detection mode: " + this.DetMode.options[this.DetMode.value];
+	},
+	Reg36 : function(sig) {
+		this.LCB_SCmd_Err = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.LCB_ErrCnt_Ovfl = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.LCB_Decode_Err = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.LCB_Locked = {value:(sig>>10)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.PRFIFO_Full = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.PRFIFO_Empt = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.LPFIFO_Full = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.LPFIFO_Empt = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.RegFIFO_ovfl = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.RegFIFO_full = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.RegFIFO_empt = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.Cluster_OVFL = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.Cluster_full = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.Cluster_empt = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.LCB_SCmd_Err.text = "LCB_SCmd_Err contribution to flag bit sum: " + this.LCB_SCmd_Err.options[this.LCB_SCmd_Err.value]
+		this.LCB_ErrCnt_Ovfl.text = "LCB_ErrCnt_Ovfl contribution to flag bit sum: " + this.LCB_ErrCnt_Ovfl.options[this.LCB_ErrCnt_Ovfl.value]
+		this.LCB_Decode_Err.text = "LCB_Decode_Err contribution to flag bit sum: " + this.LCB_Decode_Err.options[this.LCB_Decode_Err.value]
+		this.LCB_Locked.text = "LCB_Locked contribution to flag bit sum: " + this.LCB_Locked.options[this.LCB_Locked.value]
+		this.PRFIFO_Full.text = "PRFIFO_Full contribution to flag bit sum: " + this.PRFIFO_Full.options[this.PRFIFO_Full.value]
+		this.PRFIFO_Empt.text = "PRFIFO_Empt contribution to flag bit sum: " + this.PRFIFO_Empt.options[this.PRFIFO_Empt.value]
+		this.LPFIFO_Full.text = "LPFIFO_Full contribution to flag bit sum: " + this.LPFIFO_Full.options[this.LPFIFO_Full.value]
+		this.LPFIFO_Empt.text = "LPFIFO_Empt contribution to flag bit sum: " + this.LPFIFO_Empt.options[this.LPFIFO_Empt.value]
+		this.RegFIFO_ovfl.text = "RegFIFO_ovfl contribution to flag bit sum: " + this.RegFIFO_ovfl.options[this.RegFIFO_ovfl.value]
+		this.RegFIFO_full.text = "RegFIFO_full contribution to flag bit sum: " + this.RegFIFO_full.options[this.RegFIFO_full.value]
+		this.RegFIFO_empt.text = "RegFIFO_empt contribution to flag bit sum: " + this.RegFIFO_empt.options[this.RegFIFO_empt.value]
+		this.Cluster_OVFL.text = "Cluster_OVFL contribution to flag bit sum: " + this.Cluster_OVFL.options[this.Cluster_OVFL.value]
+		this.Cluster_full.text = "Cluster_full contribution to flag bit sum: " + this.Cluster_full.options[this.Cluster_full.value]
+		this.Cluster_empt.text = "Cluster_empt contribution to flag bit sum: " + this.Cluster_empt.options[this.Cluster_empt.value]
+	},
+	Reg37 : function(sig) {
+		this.unused = {value:(sig>>24)&0xff,type:'unused'};
+		this.DoFuse = {value:sig&0xffffff,type:'binput',n:24};
+		this.DoFuse.text = "eFuse cells (23-0). Select at most one to be programmed";
+	},
+	Reg38 : function(sig) {
+		this.unused = {value:(sig>>16)&0xffff,type:'unused'};
+		this.LCB_ErrCount_Thr = {value:sig&0xffff,type:'input'};
+		this.LCB_ErrCount_Thr.text = "LCB Error Count Threshold: " + this.LCB_ErrCount_Thr.value;
+	},
+	Reg48: function(sig) {
+		this.CR43SEU = {value:(sig>>31)&1,type:'binput',n:1};
+		this.CR39SEU = {value:(sig>>30)&1,type:'binput',n:1};
+		this.CR35SEU = {value:(sig>>29)&1,type:'binput',n:1};
+		this.CR31SEU = {value:(sig>>28)&1,type:'binput',n:1};
+		this.CR27SEU = {value:(sig>>27)&1,type:'binput',n:1};
+		this.CR23SEU = {value:(sig>>26)&1,type:'binput',n:1};
+		this.CR19SEU = {value:(sig>>25)&1,type:'binput',n:1};
+		this.CR15SEU = {value:(sig>>24)&1,type:'binput',n:1};
+		this.CR11SEU = {value:(sig>>23)&1,type:'binput',n:1};
+		this.CR7SEU = {value:(sig>>22)&1,type:'binput',n:1};
+		this.CR3SEU = {value:(sig>>21)&1,type:'binput',n:1};
+		this.MT7SEU = {value:(sig>>20)&1,type:'binput',n:1};
+		this.MT6SEU = {value:(sig>>19)&1,type:'binput',n:1};
+		this.MT5SEU = {value:(sig>>18)&1,type:'binput',n:1};
+		this.MT4SEU = {value:(sig>>17)&1,type:'binput',n:1};
+		this.MT3SEU = {value:(sig>>16)&1,type:'binput',n:1};
+		this.MT2SEU = {value:(sig>>15)&1,type:'binput',n:1};
+		this.MT1SEU = {value:(sig>>14)&1,type:'binput',n:1};
+		this.MT0SEU = {value:(sig>>13)&1,type:'binput',n:1};
+		this.ADCS7SEU = {value:(sig>>12)&1,type:'binput',n:1};
+		this.ADCS6SEU = {value:(sig>>11)&1,type:'binput',n:1};
+		this.ADCS4SEU = {value:(sig>>10)&1,type:'binput',n:1};
+		this.ADCS3SEU = {value:(sig>>9)&1,type:'binput',n:1};
+		this.ADCS2SEU = {value:(sig>>8)&1,type:'binput',n:1};
+		this.ADCS1SEU = {value:(sig>>7)&1,type:'binput',n:1};
+		this.CFG6SEU = {value:(sig>>6)&1,type:'binput',n:1};
+		this.CFG5SEU = {value:(sig>>5)&1,type:'binput',n:1};
+		this.CFG4SEU = {value:(sig>>4)&1,type:'binput',n:1};
+		this.CFG3SEU = {value:(sig>>3)&1,type:'binput',n:1};
+		this.CFG2SEU = {value:(sig>>2)&1,type:'binput',n:1};
+		this.CFG1SEU = {value:(sig>>1)&1,type:'binput',n:1};
+		this.CFG0SEU = {value:sig&1,type:'binput',n:1};	
+		this.CR43SEU.text = "CR43SEU: " + bin_string(this.CR43SEU.value,1);	
+		this.CR39SEU.text = "CR39SEU: " + bin_string(this.CR39SEU.value,1);	
+		this.CR35SEU.text = "CR35SEU: " + bin_string(this.CR35SEU.value,1);
+		this.CR31SEU.text = "CR31SEU: " + bin_string(this.CR31SEU.value,1);
+		this.CR27SEU.text = "CR27SEU: " + bin_string(this.CR27SEU.value,1);	
+		this.CR23SEU.text = "CR23SEU: " + bin_string(this.CR23SEU.value,1);	
+		this.CR19SEU.text = "CR19SEU: " + bin_string(this.CR19SEU.value,1);
+		this.CR15SEU.text = "CR15SEU: " + bin_string(this.CR15SEU.value,1);
+		this.CR11SEU.text = "CR11SEU: " + bin_string(this.CR11SEU.value,1);	
+		this.CR7SEU.text = "CR7SEU: " + bin_string(this.CR7SEU.value,1);	
+		this.CR3SEU.text = "CR3SEU: " + bin_string(this.CR3SEU.value,1);	
+		this.MT7SEU.text = "MT7SEU: " + bin_string(this.MT7SEU.value,1);
+		this.MT6SEU.text = "MT6SEU: " + bin_string(this.MT6SEU.value,1);
+		this.MT5SEU.text = "MT5SEU: " + bin_string(this.MT5SEU.value,1);
+		this.MT4SEU.text = "MT4SEU: " + bin_string(this.MT4SEU.value,1);
+		this.MT3SEU.text = "MT3SEU: " + bin_string(this.MT3SEU.value,1);
+		this.MT2SEU.text = "MT2SEU: " + bin_string(this.MT2SEU.value,1);
+		this.MT1SEU.text = "MT1SEU: " + bin_string(this.MT1SEU.value,1);
+		this.MT0SEU.text = "MT0SEU: " + bin_string(this.MT0SEU.value,1);
+		this.ADCS7SEU.text = "ADCS7SEU: " + bin_string(this.ADCS7SEU.value,1);	
+		this.ADCS6SEU.text = "ADCS6SEU: " + bin_string(this.ADCS6SEU.value,1);	
+		this.ADCS4SEU.text = "ADCS4SEU: " + bin_string(this.ADCS4SEU.value,1);	
+		this.ADCS3SEU.text = "ADCS3SEU: " + bin_string(this.ADCS3SEU.value,1);	
+		this.ADCS2SEU.text = "ADCS2SEU: " + bin_string(this.ADCS2SEU.value,1);	
+		this.ADCS1SEU.text = "ADCS1SEU: " + bin_string(this.ADCS1SEU.value,1);	
+		this.CFG3SEU.text = "CFG3SEU: " + bin_string(this.CFG3SEU.value,1);
+		this.CFG2SEU.text = "CFG2SEU: " + bin_string(this.CFG2SEU.value,1);
+		this.CFG1SEU.text = "CFG1SEU: " + bin_string(this.CFG1SEU.value,1);
+		this.CFG0SEU.text = "CFG0SEU: " + bin_string(this.CFG0SEU.value,1);
+	},
+	Reg49 : function(sig) {
+		this.unused = {value:(sig>>5)&0x7ffffff,type:'unused'};
+		this.Ser = {value:(sig>>4)&1,type:'binput',n:1};
+		this.HPR = {value:(sig>>3)&1,type:'binput',n:1};
+		this.TopL = {value:(sig>>2)&1,type:'binput',n:1};
+		this.SCReg = {value:(sig>>1)&1,type:'binput',n:1};
+		this.CR47 = {value:sig&1,type:'binput',n:1};
+		this.Ser.text = "SerSEU: " + bin_string(this.Ser.value,1);
+		this.HPR.text = "HPR_SEU: " + bin_string(this.HPR.value,1);
+		this.TopL.text = "TopLSEU: " + bin_string(this.TopL.value,1);
+		this.SCReg.text = "SCRegSEU: " + bin_string(this.SCReg.value,1);
+		this.CR47.text = "CR47SEU: " + bin_string(this.CR47.value,1);
+	},
+	Reg50 : function(sig) {
+		this.unused = {value:(sig>>24)&0xff,type:'unused'};
+		this.eFuse = {value:sig&0xffffff,type:'binput',n:24};
+		this.eFuse.text = "eFuse (23-0): " + bin_string(this.eFuse.value,24);
+		
+	},
+	Reg51 : function(sig) {
+		this.unused1 = {value:(sig>>28)&0xf,type:'unused'};
+		this.ADC_dat = {value:(sig>>16)&0xfff,type:'input'};
+		this.unused2 = {value:(sig>>9)&0x7f,type:'unused'};
+		this.ADC_en = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_ch3 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_ch2 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_ch1 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_ch0 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_bias = {value:sig&0xf,type:'input'};
+		this.ADC_dat.text = "ADC data: " + this.ADC_dat.value;
+		this.ADC_en.text = "ADC: " + this.ADC_en.options[this.ADC_en.value];
+		this.ADC_ch3.text = "ADC Ch3: " + this.ADC_ch3.options[this.ADC_ch3.value];
+		this.ADC_ch2.text = "ADC Ch2: " + this.ADC_ch2.options[this.ADC_ch2.value];	
+		this.ADC_ch1.text = "ADC Ch1: " + this.ADC_ch1.options[this.ADC_ch2.value];
+		this.ADC_ch0.text = "ADC Ch0: " + this.ADC_ch0.options[this.ADC_ch0.value];	
+		this.ADC_bias.text = "ADC Bias: " + this.ADC_bias.value;
+	},
+	Reg52 : function(sig) {
+		this.unused = {value:(sig>>16)&0xffff,type:'unused'};
+		this.LCB_ErrCount = {value:sig&0xffff,type:'input'};
+		this.LCB_ErrCount.text = "LCB Error Count: " + this.LCB_ErrCount.value;
+	},
+	Reg63: function(sig) {
+		this.LCB_S = {value:(sig>>16)&0xffff,type:'input'};
+		this.LCB_SCmd_Err = {value:(sig>>15)&1,type:'checkbox',checked:1,unchecked:0};
+		this.LCB_ErrCnt_Ovfl = {value:(sig>>14)&1,type:'checkbox',checked:1,unchecked:0};
+		this.LCB_Decode_Err = {value:(sig>>13)&1,type:'checkbox',checked:1,unchecked:0};
+		this.LCB_Locked = {value:(sig>>12)&1,type:'checkbox',checked:1,unchecked:0};
+		this.ADC_dat = {value:sig&0xfff,type:'input'};
+		this.ADC_dat.text = "ADC Data: " + this.ADC_dat.value;
+		this.LCB_Locked.text = "LCB circuit synchronized: " + ((this.LCB_Locked.value==this.LCB_Locked.checked)?'Yes':'No');
+		this.LCB_Decode_Err.text = "LCB invalid symbol, parity error or bad nibble: " + ((this.LCB_Decode_Err.value==this.LCB_Decode_Err.checked)?'Yes':'No');
+		this.LCB_ErrCnt_Ovfl.text = "LCB Error Count Threshold exceeded: " + ((this.LCB_ErrCnt_Ovfl.value==this.LCB_ErrCnt_Ovfl.checked)?'Yes':'No');
+		this.LCB_SCmd_Err.text = "Error in Slow Command LCB sequence: " + ((this.LCB_SCmd_Err.value==this.LCB_SCmd_Err.checked)?'Yes':'No');
+		this.LCB_S.text = "Raw LCB frame data: " + this.LCB_S.value;
+	},
+	Reg64: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 7: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 6: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 5: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 4: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 3: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 2: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 1: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 0: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg65: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 15: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 14: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 13: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 12: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 11: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 10: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 9: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 8: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg66: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 23: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 22: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 21: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 20: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 19: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 18: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 17: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 16: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg67: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 31: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 30: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 29: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 28: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 27: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 26: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 25: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 24: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg68: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 39: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 38: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 37: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 36: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 35: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 34: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 33: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 32: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg69: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 47: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 46: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 45: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 44: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 43: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 42: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 41: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 40: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg70: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 55: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 54: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 53: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 52: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 51: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 50: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 49: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 48: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg71: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 63: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 62: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 61: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 60: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 59: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 58: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 57: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 56: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg72: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 71: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 70: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 69: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 68: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 67: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 66: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 65: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 64: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg73: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 79: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 78: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 77: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 76: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 75: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 74: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 73: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 72: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg74: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 87: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 86: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 85: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 84: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 83: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 82: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 81: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 80: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg75: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 95: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 94: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 93: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 92: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 91: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 90: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 89: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 88: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg76: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 103: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 102: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 101: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 100: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 99: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 98: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 97: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 96: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg77: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 111: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 110: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 109: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 108: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 107: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 106: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 105: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 104: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg78: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 119: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 118: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 117: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 116: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 115: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 114: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 113: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 112: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg79: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 127: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 126: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 125: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 124: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 123: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 122: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 121: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 120: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg80: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 135: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 134: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 133: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 132: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 131: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 130: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 129: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 128: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg81: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 143: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 142: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 141: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 140: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 139: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 138: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 137: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 136: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg82: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 151: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 150: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 149: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 148: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 147: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 146: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 145: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 144: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg83: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 159: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 158: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 157: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 156: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 155: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 154: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 153: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 152: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg84: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 167: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 166: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 165: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 164: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 163: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 162: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 161: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 160: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg85: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 175: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 174: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 173: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 172: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 171: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 170: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 169: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 168: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg86: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 183: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 182: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 181: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 180: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 179: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 178: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 177: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 176: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg87: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 191: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 190: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 189: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 188: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 187: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 186: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 185: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 184: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg88: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 199: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 198: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 197: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 196: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 195: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 194: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 193: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 192: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg89: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 207: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 206: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 205: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 204: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 203: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 202: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 201: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 200: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg90: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 215: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 214: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 213: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 212: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 211: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 210: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 209: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 208: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg91: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 223: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 222: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 221: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 220: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 219: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 218: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 217: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 216: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg92: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 231: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 230: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 229: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 228: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 227: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 226: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 225: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 224: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg93: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 239: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 238: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 237: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 236: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 235: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 234: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 233: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 232: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg94: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 247: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 246: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 245: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 244: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 243: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 242: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 241: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 240: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg95: function(sig) {
+		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch6 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch5 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch4 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch3 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch2 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch1 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch0 = {value:(sig>>28)&0xf,type:'binput',n:4};
+		this.trimdac_ch7.text = "4 LSB bits of TrimDAC Ch 255: " + bin_string(this.trimdac_ch7.value,4);	
+		this.trimdac_ch6.text = "4 LSB bits of TrimDAC Ch 254: " + bin_string(this.trimdac_ch6.value,4);
+		this.trimdac_ch5.text = "4 LSB bits of TrimDAC Ch 253: " + bin_string(this.trimdac_ch5.value,4);
+		this.trimdac_ch4.text = "4 LSB bits of TrimDAC Ch 252: " + bin_string(this.trimdac_ch4.value,4);	
+		this.trimdac_ch3.text = "4 LSB bits of TrimDAC Ch 251: " + bin_string(this.trimdac_ch3.value,4);	
+		this.trimdac_ch2.text = "4 LSB bits of TrimDAC Ch 250: " + bin_string(this.trimdac_ch2.value,4);
+		this.trimdac_ch1.text = "4 LSB bits of TrimDAC Ch 249: " + bin_string(this.trimdac_ch1.value,4);
+		this.trimdac_ch0.text = "4 LSB bits of TrimDAC Ch 248: " + bin_string(this.trimdac_ch0.value,4);
+	},
+	Reg96: function(sig) {
+		this.trimdac_ch31 = {value:(sig>>31)&1,type:'binput',n:1}
+		this.trimdac_ch30 = {value:(sig>>30)&1,type:'binput',n:1}
+		this.trimdac_ch29 = {value:(sig>>29)&1,type:'binput',n:1}
+		this.trimdac_ch28 = {value:(sig>>28)&1,type:'binput',n:1}
+		this.trimdac_ch27 = {value:(sig>>27)&1,type:'binput',n:1}
+		this.trimdac_ch26 = {value:(sig>>26)&1,type:'binput',n:1}
+		this.trimdac_ch25 = {value:(sig>>25)&1,type:'binput',n:1}
+		this.trimdac_ch24 = {value:(sig>>24)&1,type:'binput',n:1}
+		this.trimdac_ch23 = {value:(sig>>23)&1,type:'binput',n:1}
+		this.trimdac_ch22 = {value:(sig>>22)&1,type:'binput',n:1}
+		this.trimdac_ch21 = {value:(sig>>21)&1,type:'binput',n:1}
+		this.trimdac_ch20 = {value:(sig>>20)&1,type:'binput',n:1}
+		this.trimdac_ch19 = {value:(sig>>19)&1,type:'binput',n:1}
+		this.trimdac_ch18 = {value:(sig>>18)&1,type:'binput',n:1}
+		this.trimdac_ch17 = {value:(sig>>17)&1,type:'binput',n:1}
+		this.trimdac_ch16 = {value:(sig>>16)&1,type:'binput',n:1}
+		this.trimdac_ch15 = {value:(sig>>15)&1,type:'binput',n:1}
+		this.trimdac_ch14 = {value:(sig>>14)&1,type:'binput',n:1}
+		this.trimdac_ch13 = {value:(sig>>13)&1,type:'binput',n:1}
+		this.trimdac_ch12 = {value:(sig>>12)&1,type:'binput',n:1}
+		this.trimdac_ch11 = {value:(sig>>11)&1,type:'binput',n:1}
+		this.trimdac_ch10 = {value:(sig>>10)&1,type:'binput',n:1}
+		this.trimdac_ch9 = {value:(sig>>9)&1,type:'binput',n:1}
+		this.trimdac_ch8 = {value:(sig>>8)&1,type:'binput',n:1}
+		this.trimdac_ch7 = {value:(sig>>7)&1,type:'binput',n:1}
+		this.trimdac_ch6 = {value:(sig>>6)&1,type:'binput',n:1}
+		this.trimdac_ch5 = {value:(sig>>5)&1,type:'binput',n:1}
+		this.trimdac_ch4 = {value:(sig>>4)&1,type:'binput',n:1}
+		this.trimdac_ch3 = {value:(sig>>3)&1,type:'binput',n:1}
+		this.trimdac_ch2 = {value:(sig>>2)&1,type:'binput',n:1}
+		this.trimdac_ch1 = {value:(sig>>1)&1,type:'binput',n:1}
+		this.trimdac_ch0 = {value:(sig>>0)&1,type:'binput',n:1}
+		this.trimdac_ch31.text = "TrimDAC Ch 31 MSB: " + this.trimdac_ch31.value;
+		this.trimdac_ch30.text = "TrimDAC Ch 30 MSB: " + this.trimdac_ch30.value;
+		this.trimdac_ch29.text = "TrimDAC Ch 29 MSB: " + this.trimdac_ch29.value;
+		this.trimdac_ch28.text = "TrimDAC Ch 28 MSB: " + this.trimdac_ch28.value;
+		this.trimdac_ch27.text = "TrimDAC Ch 27 MSB: " + this.trimdac_ch27.value;
+		this.trimdac_ch26.text = "TrimDAC Ch 26 MSB: " + this.trimdac_ch26.value;
+		this.trimdac_ch25.text = "TrimDAC Ch 25 MSB: " + this.trimdac_ch25.value;
+		this.trimdac_ch24.text = "TrimDAC Ch 24 MSB: " + this.trimdac_ch24.value;
+		this.trimdac_ch23.text = "TrimDAC Ch 23 MSB: " + this.trimdac_ch23.value;
+		this.trimdac_ch22.text = "TrimDAC Ch 22 MSB: " + this.trimdac_ch22.value;
+		this.trimdac_ch21.text = "TrimDAC Ch 21 MSB: " + this.trimdac_ch21.value;
+		this.trimdac_ch20.text = "TrimDAC Ch 20 MSB: " + this.trimdac_ch20.value;
+		this.trimdac_ch19.text = "TrimDAC Ch 19 MSB: " + this.trimdac_ch19.value;
+		this.trimdac_ch18.text = "TrimDAC Ch 18 MSB: " + this.trimdac_ch18.value;
+		this.trimdac_ch17.text = "TrimDAC Ch 17 MSB: " + this.trimdac_ch17.value;
+		this.trimdac_ch16.text = "TrimDAC Ch 16 MSB: " + this.trimdac_ch16.value;
+		this.trimdac_ch15.text = "TrimDAC Ch 15 MSB: " + this.trimdac_ch15.value;
+		this.trimdac_ch14.text = "TrimDAC Ch 14 MSB: " + this.trimdac_ch14.value;
+		this.trimdac_ch13.text = "TrimDAC Ch 13 MSB: " + this.trimdac_ch13.value;
+		this.trimdac_ch12.text = "TrimDAC Ch 12 MSB: " + this.trimdac_ch12.value;
+		this.trimdac_ch11.text = "TrimDAC Ch 11 MSB: " + this.trimdac_ch11.value;
+		this.trimdac_ch10.text = "TrimDAC Ch 10 MSB: " + this.trimdac_ch10.value;
+		this.trimdac_ch9.text = "TrimDAC Ch 9 MSB: " + this.trimdac_ch9.value;
+		this.trimdac_ch8.text = "TrimDAC Ch 8 MSB: " + this.trimdac_ch8.value;
+		this.trimdac_ch7.text = "TrimDAC Ch 7 MSB: " + this.trimdac_ch7.value;
+		this.trimdac_ch6.text = "TrimDAC Ch 6 MSB: " + this.trimdac_ch6.value;
+		this.trimdac_ch5.text = "TrimDAC Ch 5 MSB: " + this.trimdac_ch5.value;
+		this.trimdac_ch4.text = "TrimDAC Ch 4 MSB: " + this.trimdac_ch4.value;
+		this.trimdac_ch3.text = "TrimDAC Ch 3 MSB: " + this.trimdac_ch3.value;
+		this.trimdac_ch2.text = "TrimDAC Ch 2 MSB: " + this.trimdac_ch2.value;
+		this.trimdac_ch1.text = "TrimDAC Ch 1 MSB: " + this.trimdac_ch1.value;
+		this.trimdac_ch0.text = "TrimDAC Ch 0 MSB: " + this.trimdac_ch0.value;
+	},
+	Reg97: function(sig) {
+		this.trimdac_ch31 = {value:(sig>>31)&1,type:'binput',n:1}
+		this.trimdac_ch30 = {value:(sig>>30)&1,type:'binput',n:1}
+		this.trimdac_ch29 = {value:(sig>>29)&1,type:'binput',n:1}
+		this.trimdac_ch28 = {value:(sig>>28)&1,type:'binput',n:1}
+		this.trimdac_ch27 = {value:(sig>>27)&1,type:'binput',n:1}
+		this.trimdac_ch26 = {value:(sig>>26)&1,type:'binput',n:1}
+		this.trimdac_ch25 = {value:(sig>>25)&1,type:'binput',n:1}
+		this.trimdac_ch24 = {value:(sig>>24)&1,type:'binput',n:1}
+		this.trimdac_ch23 = {value:(sig>>23)&1,type:'binput',n:1}
+		this.trimdac_ch22 = {value:(sig>>22)&1,type:'binput',n:1}
+		this.trimdac_ch21 = {value:(sig>>21)&1,type:'binput',n:1}
+		this.trimdac_ch20 = {value:(sig>>20)&1,type:'binput',n:1}
+		this.trimdac_ch19 = {value:(sig>>19)&1,type:'binput',n:1}
+		this.trimdac_ch18 = {value:(sig>>18)&1,type:'binput',n:1}
+		this.trimdac_ch17 = {value:(sig>>17)&1,type:'binput',n:1}
+		this.trimdac_ch16 = {value:(sig>>16)&1,type:'binput',n:1}
+		this.trimdac_ch15 = {value:(sig>>15)&1,type:'binput',n:1}
+		this.trimdac_ch14 = {value:(sig>>14)&1,type:'binput',n:1}
+		this.trimdac_ch13 = {value:(sig>>13)&1,type:'binput',n:1}
+		this.trimdac_ch12 = {value:(sig>>12)&1,type:'binput',n:1}
+		this.trimdac_ch11 = {value:(sig>>11)&1,type:'binput',n:1}
+		this.trimdac_ch10 = {value:(sig>>10)&1,type:'binput',n:1}
+		this.trimdac_ch9 = {value:(sig>>9)&1,type:'binput',n:1}
+		this.trimdac_ch8 = {value:(sig>>8)&1,type:'binput',n:1}
+		this.trimdac_ch7 = {value:(sig>>7)&1,type:'binput',n:1}
+		this.trimdac_ch6 = {value:(sig>>6)&1,type:'binput',n:1}
+		this.trimdac_ch5 = {value:(sig>>5)&1,type:'binput',n:1}
+		this.trimdac_ch4 = {value:(sig>>4)&1,type:'binput',n:1}
+		this.trimdac_ch3 = {value:(sig>>3)&1,type:'binput',n:1}
+		this.trimdac_ch2 = {value:(sig>>2)&1,type:'binput',n:1}
+		this.trimdac_ch1 = {value:(sig>>1)&1,type:'binput',n:1}
+		this.trimdac_ch0 = {value:(sig>>0)&1,type:'binput',n:1}
+		this.trimdac_ch31.text = "TrimDAC Ch 63 MSB: " + this.trimdac_ch31.value;
+		this.trimdac_ch30.text = "TrimDAC Ch 62 MSB: " + this.trimdac_ch30.value;
+		this.trimdac_ch29.text = "TrimDAC Ch 61 MSB: " + this.trimdac_ch29.value;
+		this.trimdac_ch28.text = "TrimDAC Ch 60 MSB: " + this.trimdac_ch28.value;
+		this.trimdac_ch27.text = "TrimDAC Ch 59 MSB: " + this.trimdac_ch27.value;
+		this.trimdac_ch26.text = "TrimDAC Ch 58 MSB: " + this.trimdac_ch26.value;
+		this.trimdac_ch25.text = "TrimDAC Ch 57 MSB: " + this.trimdac_ch25.value;
+		this.trimdac_ch24.text = "TrimDAC Ch 56 MSB: " + this.trimdac_ch24.value;
+		this.trimdac_ch23.text = "TrimDAC Ch 55 MSB: " + this.trimdac_ch23.value;
+		this.trimdac_ch22.text = "TrimDAC Ch 54 MSB: " + this.trimdac_ch22.value;
+		this.trimdac_ch21.text = "TrimDAC Ch 53 MSB: " + this.trimdac_ch21.value;
+		this.trimdac_ch20.text = "TrimDAC Ch 52 MSB: " + this.trimdac_ch20.value;
+		this.trimdac_ch19.text = "TrimDAC Ch 51 MSB: " + this.trimdac_ch19.value;
+		this.trimdac_ch18.text = "TrimDAC Ch 50 MSB: " + this.trimdac_ch18.value;
+		this.trimdac_ch17.text = "TrimDAC Ch 49 MSB: " + this.trimdac_ch17.value;
+		this.trimdac_ch16.text = "TrimDAC Ch 48 MSB: " + this.trimdac_ch16.value;
+		this.trimdac_ch15.text = "TrimDAC Ch 47 MSB: " + this.trimdac_ch15.value;
+		this.trimdac_ch14.text = "TrimDAC Ch 46 MSB: " + this.trimdac_ch14.value;
+		this.trimdac_ch13.text = "TrimDAC Ch 45 MSB: " + this.trimdac_ch13.value;
+		this.trimdac_ch12.text = "TrimDAC Ch 44 MSB: " + this.trimdac_ch12.value;
+		this.trimdac_ch11.text = "TrimDAC Ch 43 MSB: " + this.trimdac_ch11.value;
+		this.trimdac_ch10.text = "TrimDAC Ch 42 MSB: " + this.trimdac_ch10.value;
+		this.trimdac_ch9.text = "TrimDAC Ch 41 MSB: " + this.trimdac_ch9.value;
+		this.trimdac_ch8.text = "TrimDAC Ch 40 MSB: " + this.trimdac_ch8.value;
+		this.trimdac_ch7.text = "TrimDAC Ch 39 MSB: " + this.trimdac_ch7.value;
+		this.trimdac_ch6.text = "TrimDAC Ch 38 MSB: " + this.trimdac_ch6.value;
+		this.trimdac_ch5.text = "TrimDAC Ch 37 MSB: " + this.trimdac_ch5.value;
+		this.trimdac_ch4.text = "TrimDAC Ch 36 MSB: " + this.trimdac_ch4.value;
+		this.trimdac_ch3.text = "TrimDAC Ch 35 MSB: " + this.trimdac_ch3.value;
+		this.trimdac_ch2.text = "TrimDAC Ch 34 MSB: " + this.trimdac_ch2.value;
+		this.trimdac_ch1.text = "TrimDAC Ch 33 MSB: " + this.trimdac_ch1.value;
+		this.trimdac_ch0.text = "TrimDAC Ch 32 MSB: " + this.trimdac_ch0.value;
+	},
+	Reg98: function(sig) {
+		this.trimdac_ch31 = {value:(sig>>31)&1,type:'binput',n:1}
+		this.trimdac_ch30 = {value:(sig>>30)&1,type:'binput',n:1}
+		this.trimdac_ch29 = {value:(sig>>29)&1,type:'binput',n:1}
+		this.trimdac_ch28 = {value:(sig>>28)&1,type:'binput',n:1}
+		this.trimdac_ch27 = {value:(sig>>27)&1,type:'binput',n:1}
+		this.trimdac_ch26 = {value:(sig>>26)&1,type:'binput',n:1}
+		this.trimdac_ch25 = {value:(sig>>25)&1,type:'binput',n:1}
+		this.trimdac_ch24 = {value:(sig>>24)&1,type:'binput',n:1}
+		this.trimdac_ch23 = {value:(sig>>23)&1,type:'binput',n:1}
+		this.trimdac_ch22 = {value:(sig>>22)&1,type:'binput',n:1}
+		this.trimdac_ch21 = {value:(sig>>21)&1,type:'binput',n:1}
+		this.trimdac_ch20 = {value:(sig>>20)&1,type:'binput',n:1}
+		this.trimdac_ch19 = {value:(sig>>19)&1,type:'binput',n:1}
+		this.trimdac_ch18 = {value:(sig>>18)&1,type:'binput',n:1}
+		this.trimdac_ch17 = {value:(sig>>17)&1,type:'binput',n:1}
+		this.trimdac_ch16 = {value:(sig>>16)&1,type:'binput',n:1}
+		this.trimdac_ch15 = {value:(sig>>15)&1,type:'binput',n:1}
+		this.trimdac_ch14 = {value:(sig>>14)&1,type:'binput',n:1}
+		this.trimdac_ch13 = {value:(sig>>13)&1,type:'binput',n:1}
+		this.trimdac_ch12 = {value:(sig>>12)&1,type:'binput',n:1}
+		this.trimdac_ch11 = {value:(sig>>11)&1,type:'binput',n:1}
+		this.trimdac_ch10 = {value:(sig>>10)&1,type:'binput',n:1}
+		this.trimdac_ch9 = {value:(sig>>9)&1,type:'binput',n:1}
+		this.trimdac_ch8 = {value:(sig>>8)&1,type:'binput',n:1}
+		this.trimdac_ch7 = {value:(sig>>7)&1,type:'binput',n:1}
+		this.trimdac_ch6 = {value:(sig>>6)&1,type:'binput',n:1}
+		this.trimdac_ch5 = {value:(sig>>5)&1,type:'binput',n:1}
+		this.trimdac_ch4 = {value:(sig>>4)&1,type:'binput',n:1}
+		this.trimdac_ch3 = {value:(sig>>3)&1,type:'binput',n:1}
+		this.trimdac_ch2 = {value:(sig>>2)&1,type:'binput',n:1}
+		this.trimdac_ch1 = {value:(sig>>1)&1,type:'binput',n:1}
+		this.trimdac_ch0 = {value:(sig>>0)&1,type:'binput',n:1}
+		this.trimdac_ch31.text = "TrimDAC Ch 95 MSB: " + this.trimdac_ch31.value;
+		this.trimdac_ch30.text = "TrimDAC Ch 94 MSB: " + this.trimdac_ch30.value;
+		this.trimdac_ch29.text = "TrimDAC Ch 93 MSB: " + this.trimdac_ch29.value;
+		this.trimdac_ch28.text = "TrimDAC Ch 92 MSB: " + this.trimdac_ch28.value;
+		this.trimdac_ch27.text = "TrimDAC Ch 91 MSB: " + this.trimdac_ch27.value;
+		this.trimdac_ch26.text = "TrimDAC Ch 90 MSB: " + this.trimdac_ch26.value;
+		this.trimdac_ch25.text = "TrimDAC Ch 89 MSB: " + this.trimdac_ch25.value;
+		this.trimdac_ch24.text = "TrimDAC Ch 88 MSB: " + this.trimdac_ch24.value;
+		this.trimdac_ch23.text = "TrimDAC Ch 87 MSB: " + this.trimdac_ch23.value;
+		this.trimdac_ch22.text = "TrimDAC Ch 86 MSB: " + this.trimdac_ch22.value;
+		this.trimdac_ch21.text = "TrimDAC Ch 85 MSB: " + this.trimdac_ch21.value;
+		this.trimdac_ch20.text = "TrimDAC Ch 84 MSB: " + this.trimdac_ch20.value;
+		this.trimdac_ch19.text = "TrimDAC Ch 83 MSB: " + this.trimdac_ch19.value;
+		this.trimdac_ch18.text = "TrimDAC Ch 82 MSB: " + this.trimdac_ch18.value;
+		this.trimdac_ch17.text = "TrimDAC Ch 81 MSB: " + this.trimdac_ch17.value;
+		this.trimdac_ch16.text = "TrimDAC Ch 80 MSB: " + this.trimdac_ch16.value;
+		this.trimdac_ch15.text = "TrimDAC Ch 79 MSB: " + this.trimdac_ch15.value;
+		this.trimdac_ch14.text = "TrimDAC Ch 78 MSB: " + this.trimdac_ch14.value;
+		this.trimdac_ch13.text = "TrimDAC Ch 77 MSB: " + this.trimdac_ch13.value;
+		this.trimdac_ch12.text = "TrimDAC Ch 76 MSB: " + this.trimdac_ch12.value;
+		this.trimdac_ch11.text = "TrimDAC Ch 75 MSB: " + this.trimdac_ch11.value;
+		this.trimdac_ch10.text = "TrimDAC Ch 74 MSB: " + this.trimdac_ch10.value;
+		this.trimdac_ch9.text = "TrimDAC Ch 73 MSB: " + this.trimdac_ch9.value;
+		this.trimdac_ch8.text = "TrimDAC Ch 72 MSB: " + this.trimdac_ch8.value;
+		this.trimdac_ch7.text = "TrimDAC Ch 71 MSB: " + this.trimdac_ch7.value;
+		this.trimdac_ch6.text = "TrimDAC Ch 70 MSB: " + this.trimdac_ch6.value;
+		this.trimdac_ch5.text = "TrimDAC Ch 69 MSB: " + this.trimdac_ch5.value;
+		this.trimdac_ch4.text = "TrimDAC Ch 68 MSB: " + this.trimdac_ch4.value;
+		this.trimdac_ch3.text = "TrimDAC Ch 67 MSB: " + this.trimdac_ch3.value;
+		this.trimdac_ch2.text = "TrimDAC Ch 66 MSB: " + this.trimdac_ch2.value;
+		this.trimdac_ch1.text = "TrimDAC Ch 65 MSB: " + this.trimdac_ch1.value;
+		this.trimdac_ch0.text = "TrimDAC Ch 64 MSB: " + this.trimdac_ch0.value;
+	},
+	Reg99: function(sig) {
+		this.trimdac_ch31 = {value:(sig>>31)&1,type:'binput',n:1}
+		this.trimdac_ch30 = {value:(sig>>30)&1,type:'binput',n:1}
+		this.trimdac_ch29 = {value:(sig>>29)&1,type:'binput',n:1}
+		this.trimdac_ch28 = {value:(sig>>28)&1,type:'binput',n:1}
+		this.trimdac_ch27 = {value:(sig>>27)&1,type:'binput',n:1}
+		this.trimdac_ch26 = {value:(sig>>26)&1,type:'binput',n:1}
+		this.trimdac_ch25 = {value:(sig>>25)&1,type:'binput',n:1}
+		this.trimdac_ch24 = {value:(sig>>24)&1,type:'binput',n:1}
+		this.trimdac_ch23 = {value:(sig>>23)&1,type:'binput',n:1}
+		this.trimdac_ch22 = {value:(sig>>22)&1,type:'binput',n:1}
+		this.trimdac_ch21 = {value:(sig>>21)&1,type:'binput',n:1}
+		this.trimdac_ch20 = {value:(sig>>20)&1,type:'binput',n:1}
+		this.trimdac_ch19 = {value:(sig>>19)&1,type:'binput',n:1}
+		this.trimdac_ch18 = {value:(sig>>18)&1,type:'binput',n:1}
+		this.trimdac_ch17 = {value:(sig>>17)&1,type:'binput',n:1}
+		this.trimdac_ch16 = {value:(sig>>16)&1,type:'binput',n:1}
+		this.trimdac_ch15 = {value:(sig>>15)&1,type:'binput',n:1}
+		this.trimdac_ch14 = {value:(sig>>14)&1,type:'binput',n:1}
+		this.trimdac_ch13 = {value:(sig>>13)&1,type:'binput',n:1}
+		this.trimdac_ch12 = {value:(sig>>12)&1,type:'binput',n:1}
+		this.trimdac_ch11 = {value:(sig>>11)&1,type:'binput',n:1}
+		this.trimdac_ch10 = {value:(sig>>10)&1,type:'binput',n:1}
+		this.trimdac_ch9 = {value:(sig>>9)&1,type:'binput',n:1}
+		this.trimdac_ch8 = {value:(sig>>8)&1,type:'binput',n:1}
+		this.trimdac_ch7 = {value:(sig>>7)&1,type:'binput',n:1}
+		this.trimdac_ch6 = {value:(sig>>6)&1,type:'binput',n:1}
+		this.trimdac_ch5 = {value:(sig>>5)&1,type:'binput',n:1}
+		this.trimdac_ch4 = {value:(sig>>4)&1,type:'binput',n:1}
+		this.trimdac_ch3 = {value:(sig>>3)&1,type:'binput',n:1}
+		this.trimdac_ch2 = {value:(sig>>2)&1,type:'binput',n:1}
+		this.trimdac_ch1 = {value:(sig>>1)&1,type:'binput',n:1}
+		this.trimdac_ch0 = {value:(sig>>0)&1,type:'binput',n:1}
+		this.trimdac_ch31.text = "TrimDAC Ch 127 MSB: " + this.trimdac_ch31.value;
+		this.trimdac_ch30.text = "TrimDAC Ch 126 MSB: " + this.trimdac_ch30.value;
+		this.trimdac_ch29.text = "TrimDAC Ch 125 MSB: " + this.trimdac_ch29.value;
+		this.trimdac_ch28.text = "TrimDAC Ch 124 MSB: " + this.trimdac_ch28.value;
+		this.trimdac_ch27.text = "TrimDAC Ch 123 MSB: " + this.trimdac_ch27.value;
+		this.trimdac_ch26.text = "TrimDAC Ch 122 MSB: " + this.trimdac_ch26.value;
+		this.trimdac_ch25.text = "TrimDAC Ch 121 MSB: " + this.trimdac_ch25.value;
+		this.trimdac_ch24.text = "TrimDAC Ch 120 MSB: " + this.trimdac_ch24.value;
+		this.trimdac_ch23.text = "TrimDAC Ch 119 MSB: " + this.trimdac_ch23.value;
+		this.trimdac_ch22.text = "TrimDAC Ch 118 MSB: " + this.trimdac_ch22.value;
+		this.trimdac_ch21.text = "TrimDAC Ch 117 MSB: " + this.trimdac_ch21.value;
+		this.trimdac_ch20.text = "TrimDAC Ch 116 MSB: " + this.trimdac_ch20.value;
+		this.trimdac_ch19.text = "TrimDAC Ch 115 MSB: " + this.trimdac_ch19.value;
+		this.trimdac_ch18.text = "TrimDAC Ch 114 MSB: " + this.trimdac_ch18.value;
+		this.trimdac_ch17.text = "TrimDAC Ch 113 MSB: " + this.trimdac_ch17.value;
+		this.trimdac_ch16.text = "TrimDAC Ch 112 MSB: " + this.trimdac_ch16.value;
+		this.trimdac_ch15.text = "TrimDAC Ch 111 MSB: " + this.trimdac_ch15.value;
+		this.trimdac_ch14.text = "TrimDAC Ch 110 MSB: " + this.trimdac_ch14.value;
+		this.trimdac_ch13.text = "TrimDAC Ch 109 MSB: " + this.trimdac_ch13.value;
+		this.trimdac_ch12.text = "TrimDAC Ch 108 MSB: " + this.trimdac_ch12.value;
+		this.trimdac_ch11.text = "TrimDAC Ch 107 MSB: " + this.trimdac_ch11.value;
+		this.trimdac_ch10.text = "TrimDAC Ch 106 MSB: " + this.trimdac_ch10.value;
+		this.trimdac_ch9.text = "TrimDAC Ch 105 MSB: " + this.trimdac_ch9.value;
+		this.trimdac_ch8.text = "TrimDAC Ch 104 MSB: " + this.trimdac_ch8.value;
+		this.trimdac_ch7.text = "TrimDAC Ch 103 MSB: " + this.trimdac_ch7.value;
+		this.trimdac_ch6.text = "TrimDAC Ch 102 MSB: " + this.trimdac_ch6.value;
+		this.trimdac_ch5.text = "TrimDAC Ch 101 MSB: " + this.trimdac_ch5.value;
+		this.trimdac_ch4.text = "TrimDAC Ch 100 MSB: " + this.trimdac_ch4.value;
+		this.trimdac_ch3.text = "TrimDAC Ch 99 MSB: " + this.trimdac_ch3.value;
+		this.trimdac_ch2.text = "TrimDAC Ch 98 MSB: " + this.trimdac_ch2.value;
+		this.trimdac_ch1.text = "TrimDAC Ch 97 MSB: " + this.trimdac_ch1.value;
+		this.trimdac_ch0.text = "TrimDAC Ch 96 MSB: " + this.trimdac_ch0.value;
+	},
+	Reg100: function(sig) {
+		this.trimdac_ch31 = {value:(sig>>31)&1,type:'binput',n:1}
+		this.trimdac_ch30 = {value:(sig>>30)&1,type:'binput',n:1}
+		this.trimdac_ch29 = {value:(sig>>29)&1,type:'binput',n:1}
+		this.trimdac_ch28 = {value:(sig>>28)&1,type:'binput',n:1}
+		this.trimdac_ch27 = {value:(sig>>27)&1,type:'binput',n:1}
+		this.trimdac_ch26 = {value:(sig>>26)&1,type:'binput',n:1}
+		this.trimdac_ch25 = {value:(sig>>25)&1,type:'binput',n:1}
+		this.trimdac_ch24 = {value:(sig>>24)&1,type:'binput',n:1}
+		this.trimdac_ch23 = {value:(sig>>23)&1,type:'binput',n:1}
+		this.trimdac_ch22 = {value:(sig>>22)&1,type:'binput',n:1}
+		this.trimdac_ch21 = {value:(sig>>21)&1,type:'binput',n:1}
+		this.trimdac_ch20 = {value:(sig>>20)&1,type:'binput',n:1}
+		this.trimdac_ch19 = {value:(sig>>19)&1,type:'binput',n:1}
+		this.trimdac_ch18 = {value:(sig>>18)&1,type:'binput',n:1}
+		this.trimdac_ch17 = {value:(sig>>17)&1,type:'binput',n:1}
+		this.trimdac_ch16 = {value:(sig>>16)&1,type:'binput',n:1}
+		this.trimdac_ch15 = {value:(sig>>15)&1,type:'binput',n:1}
+		this.trimdac_ch14 = {value:(sig>>14)&1,type:'binput',n:1}
+		this.trimdac_ch13 = {value:(sig>>13)&1,type:'binput',n:1}
+		this.trimdac_ch12 = {value:(sig>>12)&1,type:'binput',n:1}
+		this.trimdac_ch11 = {value:(sig>>11)&1,type:'binput',n:1}
+		this.trimdac_ch10 = {value:(sig>>10)&1,type:'binput',n:1}
+		this.trimdac_ch9 = {value:(sig>>9)&1,type:'binput',n:1}
+		this.trimdac_ch8 = {value:(sig>>8)&1,type:'binput',n:1}
+		this.trimdac_ch7 = {value:(sig>>7)&1,type:'binput',n:1}
+		this.trimdac_ch6 = {value:(sig>>6)&1,type:'binput',n:1}
+		this.trimdac_ch5 = {value:(sig>>5)&1,type:'binput',n:1}
+		this.trimdac_ch4 = {value:(sig>>4)&1,type:'binput',n:1}
+		this.trimdac_ch3 = {value:(sig>>3)&1,type:'binput',n:1}
+		this.trimdac_ch2 = {value:(sig>>2)&1,type:'binput',n:1}
+		this.trimdac_ch1 = {value:(sig>>1)&1,type:'binput',n:1}
+		this.trimdac_ch0 = {value:(sig>>0)&1,type:'binput',n:1}
+		this.trimdac_ch31.text = "TrimDAC Ch 159 MSB: " + this.trimdac_ch31.value;
+		this.trimdac_ch30.text = "TrimDAC Ch 158 MSB: " + this.trimdac_ch30.value;
+		this.trimdac_ch29.text = "TrimDAC Ch 157 MSB: " + this.trimdac_ch29.value;
+		this.trimdac_ch28.text = "TrimDAC Ch 156 MSB: " + this.trimdac_ch28.value;
+		this.trimdac_ch27.text = "TrimDAC Ch 155 MSB: " + this.trimdac_ch27.value;
+		this.trimdac_ch26.text = "TrimDAC Ch 154 MSB: " + this.trimdac_ch26.value;
+		this.trimdac_ch25.text = "TrimDAC Ch 153 MSB: " + this.trimdac_ch25.value;
+		this.trimdac_ch24.text = "TrimDAC Ch 152 MSB: " + this.trimdac_ch24.value;
+		this.trimdac_ch23.text = "TrimDAC Ch 151 MSB: " + this.trimdac_ch23.value;
+		this.trimdac_ch22.text = "TrimDAC Ch 150 MSB: " + this.trimdac_ch22.value;
+		this.trimdac_ch21.text = "TrimDAC Ch 149 MSB: " + this.trimdac_ch21.value;
+		this.trimdac_ch20.text = "TrimDAC Ch 148 MSB: " + this.trimdac_ch20.value;
+		this.trimdac_ch19.text = "TrimDAC Ch 147 MSB: " + this.trimdac_ch19.value;
+		this.trimdac_ch18.text = "TrimDAC Ch 146 MSB: " + this.trimdac_ch18.value;
+		this.trimdac_ch17.text = "TrimDAC Ch 145 MSB: " + this.trimdac_ch17.value;
+		this.trimdac_ch16.text = "TrimDAC Ch 144 MSB: " + this.trimdac_ch16.value;
+		this.trimdac_ch15.text = "TrimDAC Ch 143 MSB: " + this.trimdac_ch15.value;
+		this.trimdac_ch14.text = "TrimDAC Ch 142 MSB: " + this.trimdac_ch14.value;
+		this.trimdac_ch13.text = "TrimDAC Ch 141 MSB: " + this.trimdac_ch13.value;
+		this.trimdac_ch12.text = "TrimDAC Ch 140 MSB: " + this.trimdac_ch12.value;
+		this.trimdac_ch11.text = "TrimDAC Ch 139 MSB: " + this.trimdac_ch11.value;
+		this.trimdac_ch10.text = "TrimDAC Ch 138 MSB: " + this.trimdac_ch10.value;
+		this.trimdac_ch9.text = "TrimDAC Ch 137 MSB: " + this.trimdac_ch9.value;
+		this.trimdac_ch8.text = "TrimDAC Ch 136 MSB: " + this.trimdac_ch8.value;
+		this.trimdac_ch7.text = "TrimDAC Ch 135 MSB: " + this.trimdac_ch7.value;
+		this.trimdac_ch6.text = "TrimDAC Ch 134 MSB: " + this.trimdac_ch6.value;
+		this.trimdac_ch5.text = "TrimDAC Ch 133 MSB: " + this.trimdac_ch5.value;
+		this.trimdac_ch4.text = "TrimDAC Ch 132 MSB: " + this.trimdac_ch4.value;
+		this.trimdac_ch3.text = "TrimDAC Ch 131 MSB: " + this.trimdac_ch3.value;
+		this.trimdac_ch2.text = "TrimDAC Ch 130 MSB: " + this.trimdac_ch2.value;
+		this.trimdac_ch1.text = "TrimDAC Ch 129 MSB: " + this.trimdac_ch1.value;
+		this.trimdac_ch0.text = "TrimDAC Ch 128 MSB: " + this.trimdac_ch0.value;
+	},
+	Reg101: function(sig) {
+		this.trimdac_ch31 = {value:(sig>>31)&1,type:'binput',n:1}
+		this.trimdac_ch30 = {value:(sig>>30)&1,type:'binput',n:1}
+		this.trimdac_ch29 = {value:(sig>>29)&1,type:'binput',n:1}
+		this.trimdac_ch28 = {value:(sig>>28)&1,type:'binput',n:1}
+		this.trimdac_ch27 = {value:(sig>>27)&1,type:'binput',n:1}
+		this.trimdac_ch26 = {value:(sig>>26)&1,type:'binput',n:1}
+		this.trimdac_ch25 = {value:(sig>>25)&1,type:'binput',n:1}
+		this.trimdac_ch24 = {value:(sig>>24)&1,type:'binput',n:1}
+		this.trimdac_ch23 = {value:(sig>>23)&1,type:'binput',n:1}
+		this.trimdac_ch22 = {value:(sig>>22)&1,type:'binput',n:1}
+		this.trimdac_ch21 = {value:(sig>>21)&1,type:'binput',n:1}
+		this.trimdac_ch20 = {value:(sig>>20)&1,type:'binput',n:1}
+		this.trimdac_ch19 = {value:(sig>>19)&1,type:'binput',n:1}
+		this.trimdac_ch18 = {value:(sig>>18)&1,type:'binput',n:1}
+		this.trimdac_ch17 = {value:(sig>>17)&1,type:'binput',n:1}
+		this.trimdac_ch16 = {value:(sig>>16)&1,type:'binput',n:1}
+		this.trimdac_ch15 = {value:(sig>>15)&1,type:'binput',n:1}
+		this.trimdac_ch14 = {value:(sig>>14)&1,type:'binput',n:1}
+		this.trimdac_ch13 = {value:(sig>>13)&1,type:'binput',n:1}
+		this.trimdac_ch12 = {value:(sig>>12)&1,type:'binput',n:1}
+		this.trimdac_ch11 = {value:(sig>>11)&1,type:'binput',n:1}
+		this.trimdac_ch10 = {value:(sig>>10)&1,type:'binput',n:1}
+		this.trimdac_ch9 = {value:(sig>>9)&1,type:'binput',n:1}
+		this.trimdac_ch8 = {value:(sig>>8)&1,type:'binput',n:1}
+		this.trimdac_ch7 = {value:(sig>>7)&1,type:'binput',n:1}
+		this.trimdac_ch6 = {value:(sig>>6)&1,type:'binput',n:1}
+		this.trimdac_ch5 = {value:(sig>>5)&1,type:'binput',n:1}
+		this.trimdac_ch4 = {value:(sig>>4)&1,type:'binput',n:1}
+		this.trimdac_ch3 = {value:(sig>>3)&1,type:'binput',n:1}
+		this.trimdac_ch2 = {value:(sig>>2)&1,type:'binput',n:1}
+		this.trimdac_ch1 = {value:(sig>>1)&1,type:'binput',n:1}
+		this.trimdac_ch0 = {value:(sig>>0)&1,type:'binput',n:1}
+		this.trimdac_ch31.text = "TrimDAC Ch 191 MSB: " + this.trimdac_ch31.value;
+		this.trimdac_ch30.text = "TrimDAC Ch 190 MSB: " + this.trimdac_ch30.value;
+		this.trimdac_ch29.text = "TrimDAC Ch 189 MSB: " + this.trimdac_ch29.value;
+		this.trimdac_ch28.text = "TrimDAC Ch 188 MSB: " + this.trimdac_ch28.value;
+		this.trimdac_ch27.text = "TrimDAC Ch 187 MSB: " + this.trimdac_ch27.value;
+		this.trimdac_ch26.text = "TrimDAC Ch 186 MSB: " + this.trimdac_ch26.value;
+		this.trimdac_ch25.text = "TrimDAC Ch 185 MSB: " + this.trimdac_ch25.value;
+		this.trimdac_ch24.text = "TrimDAC Ch 184 MSB: " + this.trimdac_ch24.value;
+		this.trimdac_ch23.text = "TrimDAC Ch 183 MSB: " + this.trimdac_ch23.value;
+		this.trimdac_ch22.text = "TrimDAC Ch 182 MSB: " + this.trimdac_ch22.value;
+		this.trimdac_ch21.text = "TrimDAC Ch 181 MSB: " + this.trimdac_ch21.value;
+		this.trimdac_ch20.text = "TrimDAC Ch 180 MSB: " + this.trimdac_ch20.value;
+		this.trimdac_ch19.text = "TrimDAC Ch 179 MSB: " + this.trimdac_ch19.value;
+		this.trimdac_ch18.text = "TrimDAC Ch 178 MSB: " + this.trimdac_ch18.value;
+		this.trimdac_ch17.text = "TrimDAC Ch 177 MSB: " + this.trimdac_ch17.value;
+		this.trimdac_ch16.text = "TrimDAC Ch 176 MSB: " + this.trimdac_ch16.value;
+		this.trimdac_ch15.text = "TrimDAC Ch 175 MSB: " + this.trimdac_ch15.value;
+		this.trimdac_ch14.text = "TrimDAC Ch 174 MSB: " + this.trimdac_ch14.value;
+		this.trimdac_ch13.text = "TrimDAC Ch 173 MSB: " + this.trimdac_ch13.value;
+		this.trimdac_ch12.text = "TrimDAC Ch 172 MSB: " + this.trimdac_ch12.value;
+		this.trimdac_ch11.text = "TrimDAC Ch 171 MSB: " + this.trimdac_ch11.value;
+		this.trimdac_ch10.text = "TrimDAC Ch 170 MSB: " + this.trimdac_ch10.value;
+		this.trimdac_ch9.text = "TrimDAC Ch 169 MSB: " + this.trimdac_ch9.value;
+		this.trimdac_ch8.text = "TrimDAC Ch 168 MSB: " + this.trimdac_ch8.value;
+		this.trimdac_ch7.text = "TrimDAC Ch 167 MSB: " + this.trimdac_ch7.value;
+		this.trimdac_ch6.text = "TrimDAC Ch 166 MSB: " + this.trimdac_ch6.value;
+		this.trimdac_ch5.text = "TrimDAC Ch 165 MSB: " + this.trimdac_ch5.value;
+		this.trimdac_ch4.text = "TrimDAC Ch 164 MSB: " + this.trimdac_ch4.value;
+		this.trimdac_ch3.text = "TrimDAC Ch 163 MSB: " + this.trimdac_ch3.value;
+		this.trimdac_ch2.text = "TrimDAC Ch 162 MSB: " + this.trimdac_ch2.value;
+		this.trimdac_ch1.text = "TrimDAC Ch 161 MSB: " + this.trimdac_ch1.value;
+		this.trimdac_ch0.text = "TrimDAC Ch 160 MSB: " + this.trimdac_ch0.value;
+	},
+	Reg102: function(sig) {
+		this.trimdac_ch31 = {value:(sig>>31)&1,type:'binput',n:1}
+		this.trimdac_ch30 = {value:(sig>>30)&1,type:'binput',n:1}
+		this.trimdac_ch29 = {value:(sig>>29)&1,type:'binput',n:1}
+		this.trimdac_ch28 = {value:(sig>>28)&1,type:'binput',n:1}
+		this.trimdac_ch27 = {value:(sig>>27)&1,type:'binput',n:1}
+		this.trimdac_ch26 = {value:(sig>>26)&1,type:'binput',n:1}
+		this.trimdac_ch25 = {value:(sig>>25)&1,type:'binput',n:1}
+		this.trimdac_ch24 = {value:(sig>>24)&1,type:'binput',n:1}
+		this.trimdac_ch23 = {value:(sig>>23)&1,type:'binput',n:1}
+		this.trimdac_ch22 = {value:(sig>>22)&1,type:'binput',n:1}
+		this.trimdac_ch21 = {value:(sig>>21)&1,type:'binput',n:1}
+		this.trimdac_ch20 = {value:(sig>>20)&1,type:'binput',n:1}
+		this.trimdac_ch19 = {value:(sig>>19)&1,type:'binput',n:1}
+		this.trimdac_ch18 = {value:(sig>>18)&1,type:'binput',n:1}
+		this.trimdac_ch17 = {value:(sig>>17)&1,type:'binput',n:1}
+		this.trimdac_ch16 = {value:(sig>>16)&1,type:'binput',n:1}
+		this.trimdac_ch15 = {value:(sig>>15)&1,type:'binput',n:1}
+		this.trimdac_ch14 = {value:(sig>>14)&1,type:'binput',n:1}
+		this.trimdac_ch13 = {value:(sig>>13)&1,type:'binput',n:1}
+		this.trimdac_ch12 = {value:(sig>>12)&1,type:'binput',n:1}
+		this.trimdac_ch11 = {value:(sig>>11)&1,type:'binput',n:1}
+		this.trimdac_ch10 = {value:(sig>>10)&1,type:'binput',n:1}
+		this.trimdac_ch9 = {value:(sig>>9)&1,type:'binput',n:1}
+		this.trimdac_ch8 = {value:(sig>>8)&1,type:'binput',n:1}
+		this.trimdac_ch7 = {value:(sig>>7)&1,type:'binput',n:1}
+		this.trimdac_ch6 = {value:(sig>>6)&1,type:'binput',n:1}
+		this.trimdac_ch5 = {value:(sig>>5)&1,type:'binput',n:1}
+		this.trimdac_ch4 = {value:(sig>>4)&1,type:'binput',n:1}
+		this.trimdac_ch3 = {value:(sig>>3)&1,type:'binput',n:1}
+		this.trimdac_ch2 = {value:(sig>>2)&1,type:'binput',n:1}
+		this.trimdac_ch1 = {value:(sig>>1)&1,type:'binput',n:1}
+		this.trimdac_ch0 = {value:(sig>>0)&1,type:'binput',n:1}
+		this.trimdac_ch31.text = "TrimDAC Ch 223 MSB: " + this.trimdac_ch31.value;
+		this.trimdac_ch30.text = "TrimDAC Ch 222 MSB: " + this.trimdac_ch30.value;
+		this.trimdac_ch29.text = "TrimDAC Ch 221 MSB: " + this.trimdac_ch29.value;
+		this.trimdac_ch28.text = "TrimDAC Ch 220 MSB: " + this.trimdac_ch28.value;
+		this.trimdac_ch27.text = "TrimDAC Ch 219 MSB: " + this.trimdac_ch27.value;
+		this.trimdac_ch26.text = "TrimDAC Ch 218 MSB: " + this.trimdac_ch26.value;
+		this.trimdac_ch25.text = "TrimDAC Ch 217 MSB: " + this.trimdac_ch25.value;
+		this.trimdac_ch24.text = "TrimDAC Ch 216 MSB: " + this.trimdac_ch24.value;
+		this.trimdac_ch23.text = "TrimDAC Ch 215 MSB: " + this.trimdac_ch23.value;
+		this.trimdac_ch22.text = "TrimDAC Ch 214 MSB: " + this.trimdac_ch22.value;
+		this.trimdac_ch21.text = "TrimDAC Ch 213 MSB: " + this.trimdac_ch21.value;
+		this.trimdac_ch20.text = "TrimDAC Ch 212 MSB: " + this.trimdac_ch20.value;
+		this.trimdac_ch19.text = "TrimDAC Ch 211 MSB: " + this.trimdac_ch19.value;
+		this.trimdac_ch18.text = "TrimDAC Ch 210 MSB: " + this.trimdac_ch18.value;
+		this.trimdac_ch17.text = "TrimDAC Ch 209 MSB: " + this.trimdac_ch17.value;
+		this.trimdac_ch16.text = "TrimDAC Ch 208 MSB: " + this.trimdac_ch16.value;
+		this.trimdac_ch15.text = "TrimDAC Ch 207 MSB: " + this.trimdac_ch15.value;
+		this.trimdac_ch14.text = "TrimDAC Ch 206 MSB: " + this.trimdac_ch14.value;
+		this.trimdac_ch13.text = "TrimDAC Ch 205 MSB: " + this.trimdac_ch13.value;
+		this.trimdac_ch12.text = "TrimDAC Ch 204 MSB: " + this.trimdac_ch12.value;
+		this.trimdac_ch11.text = "TrimDAC Ch 203 MSB: " + this.trimdac_ch11.value;
+		this.trimdac_ch10.text = "TrimDAC Ch 202 MSB: " + this.trimdac_ch10.value;
+		this.trimdac_ch9.text = "TrimDAC Ch 201 MSB: " + this.trimdac_ch9.value;
+		this.trimdac_ch8.text = "TrimDAC Ch 200 MSB: " + this.trimdac_ch8.value;
+		this.trimdac_ch7.text = "TrimDAC Ch 199 MSB: " + this.trimdac_ch7.value;
+		this.trimdac_ch6.text = "TrimDAC Ch 198 MSB: " + this.trimdac_ch6.value;
+		this.trimdac_ch5.text = "TrimDAC Ch 197 MSB: " + this.trimdac_ch5.value;
+		this.trimdac_ch4.text = "TrimDAC Ch 196 MSB: " + this.trimdac_ch4.value;
+		this.trimdac_ch3.text = "TrimDAC Ch 195 MSB: " + this.trimdac_ch3.value;
+		this.trimdac_ch2.text = "TrimDAC Ch 194 MSB: " + this.trimdac_ch2.value;
+		this.trimdac_ch1.text = "TrimDAC Ch 193 MSB: " + this.trimdac_ch1.value;
+		this.trimdac_ch0.text = "TrimDAC Ch 192 MSB: " + this.trimdac_ch0.value;
+	},
+	Reg103: function(sig) {
+		this.trimdac_ch31 = {value:(sig>>31)&1,type:'binput',n:1}
+		this.trimdac_ch30 = {value:(sig>>30)&1,type:'binput',n:1}
+		this.trimdac_ch29 = {value:(sig>>29)&1,type:'binput',n:1}
+		this.trimdac_ch28 = {value:(sig>>28)&1,type:'binput',n:1}
+		this.trimdac_ch27 = {value:(sig>>27)&1,type:'binput',n:1}
+		this.trimdac_ch26 = {value:(sig>>26)&1,type:'binput',n:1}
+		this.trimdac_ch25 = {value:(sig>>25)&1,type:'binput',n:1}
+		this.trimdac_ch24 = {value:(sig>>24)&1,type:'binput',n:1}
+		this.trimdac_ch23 = {value:(sig>>23)&1,type:'binput',n:1}
+		this.trimdac_ch22 = {value:(sig>>22)&1,type:'binput',n:1}
+		this.trimdac_ch21 = {value:(sig>>21)&1,type:'binput',n:1}
+		this.trimdac_ch20 = {value:(sig>>20)&1,type:'binput',n:1}
+		this.trimdac_ch19 = {value:(sig>>19)&1,type:'binput',n:1}
+		this.trimdac_ch18 = {value:(sig>>18)&1,type:'binput',n:1}
+		this.trimdac_ch17 = {value:(sig>>17)&1,type:'binput',n:1}
+		this.trimdac_ch16 = {value:(sig>>16)&1,type:'binput',n:1}
+		this.trimdac_ch15 = {value:(sig>>15)&1,type:'binput',n:1}
+		this.trimdac_ch14 = {value:(sig>>14)&1,type:'binput',n:1}
+		this.trimdac_ch13 = {value:(sig>>13)&1,type:'binput',n:1}
+		this.trimdac_ch12 = {value:(sig>>12)&1,type:'binput',n:1}
+		this.trimdac_ch11 = {value:(sig>>11)&1,type:'binput',n:1}
+		this.trimdac_ch10 = {value:(sig>>10)&1,type:'binput',n:1}
+		this.trimdac_ch9 = {value:(sig>>9)&1,type:'binput',n:1}
+		this.trimdac_ch8 = {value:(sig>>8)&1,type:'binput',n:1}
+		this.trimdac_ch7 = {value:(sig>>7)&1,type:'binput',n:1}
+		this.trimdac_ch6 = {value:(sig>>6)&1,type:'binput',n:1}
+		this.trimdac_ch5 = {value:(sig>>5)&1,type:'binput',n:1}
+		this.trimdac_ch4 = {value:(sig>>4)&1,type:'binput',n:1}
+		this.trimdac_ch3 = {value:(sig>>3)&1,type:'binput',n:1}
+		this.trimdac_ch2 = {value:(sig>>2)&1,type:'binput',n:1}
+		this.trimdac_ch1 = {value:(sig>>1)&1,type:'binput',n:1}
+		this.trimdac_ch0 = {value:(sig>>0)&1,type:'binput',n:1}
+		this.trimdac_ch31.text = "TrimDAC Ch 255 MSB: " + this.trimdac_ch31.value;
+		this.trimdac_ch30.text = "TrimDAC Ch 254 MSB: " + this.trimdac_ch30.value;
+		this.trimdac_ch29.text = "TrimDAC Ch 253 MSB: " + this.trimdac_ch29.value;
+		this.trimdac_ch28.text = "TrimDAC Ch 252 MSB: " + this.trimdac_ch28.value;
+		this.trimdac_ch27.text = "TrimDAC Ch 251 MSB: " + this.trimdac_ch27.value;
+		this.trimdac_ch26.text = "TrimDAC Ch 250 MSB: " + this.trimdac_ch26.value;
+		this.trimdac_ch25.text = "TrimDAC Ch 249 MSB: " + this.trimdac_ch25.value;
+		this.trimdac_ch24.text = "TrimDAC Ch 248 MSB: " + this.trimdac_ch24.value;
+		this.trimdac_ch23.text = "TrimDAC Ch 247 MSB: " + this.trimdac_ch23.value;
+		this.trimdac_ch22.text = "TrimDAC Ch 246 MSB: " + this.trimdac_ch22.value;
+		this.trimdac_ch21.text = "TrimDAC Ch 245 MSB: " + this.trimdac_ch21.value;
+		this.trimdac_ch20.text = "TrimDAC Ch 244 MSB: " + this.trimdac_ch20.value;
+		this.trimdac_ch19.text = "TrimDAC Ch 243 MSB: " + this.trimdac_ch19.value;
+		this.trimdac_ch18.text = "TrimDAC Ch 242 MSB: " + this.trimdac_ch18.value;
+		this.trimdac_ch17.text = "TrimDAC Ch 241 MSB: " + this.trimdac_ch17.value;
+		this.trimdac_ch16.text = "TrimDAC Ch 240 MSB: " + this.trimdac_ch16.value;
+		this.trimdac_ch15.text = "TrimDAC Ch 239 MSB: " + this.trimdac_ch15.value;
+		this.trimdac_ch14.text = "TrimDAC Ch 238 MSB: " + this.trimdac_ch14.value;
+		this.trimdac_ch13.text = "TrimDAC Ch 237 MSB: " + this.trimdac_ch13.value;
+		this.trimdac_ch12.text = "TrimDAC Ch 236 MSB: " + this.trimdac_ch12.value;
+		this.trimdac_ch11.text = "TrimDAC Ch 235 MSB: " + this.trimdac_ch11.value;
+		this.trimdac_ch10.text = "TrimDAC Ch 234 MSB: " + this.trimdac_ch10.value;
+		this.trimdac_ch9.text = "TrimDAC Ch 233 MSB: " + this.trimdac_ch9.value;
+		this.trimdac_ch8.text = "TrimDAC Ch 232 MSB: " + this.trimdac_ch8.value;
+		this.trimdac_ch7.text = "TrimDAC Ch 231 MSB: " + this.trimdac_ch7.value;
+		this.trimdac_ch6.text = "TrimDAC Ch 230 MSB: " + this.trimdac_ch6.value;
+		this.trimdac_ch5.text = "TrimDAC Ch 229 MSB: " + this.trimdac_ch5.value;
+		this.trimdac_ch4.text = "TrimDAC Ch 228 MSB: " + this.trimdac_ch4.value;
+		this.trimdac_ch3.text = "TrimDAC Ch 227 MSB: " + this.trimdac_ch3.value;
+		this.trimdac_ch2.text = "TrimDAC Ch 226 MSB: " + this.trimdac_ch2.value;
+		this.trimdac_ch1.text = "TrimDAC Ch 225 MSB: " + this.trimdac_ch1.value;
+		this.trimdac_ch0.text = "TrimDAC Ch 224 MSB: " + this.trimdac_ch0.value;
+	},
+	Reg104: function(sig) {
+		this.cal_en_ch31 = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch30 = {value:(sig>>30)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch29 = {value:(sig>>29)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch28 = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch27 = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch26 = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch25 = {value:(sig>>25)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch24 = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch23 = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch22 = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch21 = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch20 = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch19 = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch18 = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch17 = {value:(sig>>17)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch16 = {value:(sig>>16)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch15 = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch14 = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch13 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch12 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch11 = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch10 = {value:(sig>>10)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch9 = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch8 = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch7 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch6 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch5 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch4 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch3 = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch2 = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch0 = {value:(sig>>0)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch31.text = "Calibration Pulse Ch 31: "  + this.cal_en_ch31.value;
+		this.cal_en_ch30.text = "Calibration Pulse Ch 30: "  + this.cal_en_ch30.value;
+		this.cal_en_ch29.text = "Calibration Pulse Ch 29: "  + this.cal_en_ch29.value;
+		this.cal_en_ch28.text = "Calibration Pulse Ch 28: "  + this.cal_en_ch28.value;
+		this.cal_en_ch27.text = "Calibration Pulse Ch 27: "  + this.cal_en_ch27.value;
+		this.cal_en_ch26.text = "Calibration Pulse Ch 26: "  + this.cal_en_ch26.value;
+		this.cal_en_ch25.text = "Calibration Pulse Ch 25: "  + this.cal_en_ch25.value;
+		this.cal_en_ch24.text = "Calibration Pulse Ch 24: "  + this.cal_en_ch24.value;
+		this.cal_en_ch23.text = "Calibration Pulse Ch 23: "  + this.cal_en_ch23.value;
+		this.cal_en_ch22.text = "Calibration Pulse Ch 22: "  + this.cal_en_ch22.value;
+		this.cal_en_ch21.text = "Calibration Pulse Ch 21: "  + this.cal_en_ch21.value;
+		this.cal_en_ch20.text = "Calibration Pulse Ch 20: "  + this.cal_en_ch20.value;
+		this.cal_en_ch19.text = "Calibration Pulse Ch 19: "  + this.cal_en_ch19.value;
+		this.cal_en_ch18.text = "Calibration Pulse Ch 18: "  + this.cal_en_ch18.value;
+		this.cal_en_ch17.text = "Calibration Pulse Ch 17: "  + this.cal_en_ch17.value;
+		this.cal_en_ch16.text = "Calibration Pulse Ch 16: "  + this.cal_en_ch16.value;
+		this.cal_en_ch15.text = "Calibration Pulse Ch 15: "  + this.cal_en_ch15.value;
+		this.cal_en_ch14.text = "Calibration Pulse Ch 14: "  + this.cal_en_ch14.value;
+		this.cal_en_ch13.text = "Calibration Pulse Ch 13: "  + this.cal_en_ch13.value;
+		this.cal_en_ch12.text = "Calibration Pulse Ch 12: "  + this.cal_en_ch12.value;
+		this.cal_en_ch11.text = "Calibration Pulse Ch 11: "  + this.cal_en_ch11.value;
+		this.cal_en_ch10.text = "Calibration Pulse Ch 10: "  + this.cal_en_ch10.value;
+		this.cal_en_ch9.text = "Calibration Pulse Ch 9: " + this.cal_en_ch9.value;
+		this.cal_en_ch8.text = "Calibration Pulse Ch 8: " + this.cal_en_ch8.value;
+		this.cal_en_ch7.text = "Calibration Pulse Ch 7: " + this.cal_en_ch7.value;
+		this.cal_en_ch6.text = "Calibration Pulse Ch 6: " + this.cal_en_ch6.value;
+		this.cal_en_ch5.text = "Calibration Pulse Ch 5: " + this.cal_en_ch5.value;
+		this.cal_en_ch4.text = "Calibration Pulse Ch 4: " + this.cal_en_ch4.value;
+		this.cal_en_ch3.text = "Calibration Pulse Ch 3: " + this.cal_en_ch3.value;
+		this.cal_en_ch2.text = "Calibration Pulse Ch 2: " + this.cal_en_ch2.value;
+		this.cal_en_ch1.text = "Calibration Pulse Ch 1: " + this.cal_en_ch1.value;
+		this.cal_en_ch0.text = "Calibration Pulse Ch 0: " + this.cal_en_ch0.value;
+	},
+	Reg105: function(sig) {
+		this.cal_en_ch31 = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch30 = {value:(sig>>30)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch29 = {value:(sig>>29)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch28 = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch27 = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch26 = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch25 = {value:(sig>>25)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch24 = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch23 = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch22 = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch21 = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch20 = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch19 = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch18 = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch17 = {value:(sig>>17)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch16 = {value:(sig>>16)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch15 = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch14 = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch13 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch12 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch11 = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch10 = {value:(sig>>10)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch9 = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch8 = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch7 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch6 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch5 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch4 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch3 = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch2 = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch0 = {value:(sig>>0)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch31.text = "Calibration Pulse Ch 63: " + this.cal_en_ch31.value;
+		this.cal_en_ch30.text = "Calibration Pulse Ch 62: " + this.cal_en_ch30.value;
+		this.cal_en_ch29.text = "Calibration Pulse Ch 61: " + this.cal_en_ch29.value;
+		this.cal_en_ch28.text = "Calibration Pulse Ch 60: " + this.cal_en_ch28.value;
+		this.cal_en_ch27.text = "Calibration Pulse Ch 59: " + this.cal_en_ch27.value;
+		this.cal_en_ch26.text = "Calibration Pulse Ch 58: " + this.cal_en_ch26.value;
+		this.cal_en_ch25.text = "Calibration Pulse Ch 57: " + this.cal_en_ch25.value;
+		this.cal_en_ch24.text = "Calibration Pulse Ch 56: " + this.cal_en_ch24.value;
+		this.cal_en_ch23.text = "Calibration Pulse Ch 55: " + this.cal_en_ch23.value;
+		this.cal_en_ch22.text = "Calibration Pulse Ch 54: " + this.cal_en_ch22.value;
+		this.cal_en_ch21.text = "Calibration Pulse Ch 53: " + this.cal_en_ch21.value;
+		this.cal_en_ch20.text = "Calibration Pulse Ch 52: " + this.cal_en_ch20.value;
+		this.cal_en_ch19.text = "Calibration Pulse Ch 51: " + this.cal_en_ch19.value;
+		this.cal_en_ch18.text = "Calibration Pulse Ch 50: " + this.cal_en_ch18.value;
+		this.cal_en_ch17.text = "Calibration Pulse Ch 49: " + this.cal_en_ch17.value;
+		this.cal_en_ch16.text = "Calibration Pulse Ch 48: " + this.cal_en_ch16.value;
+		this.cal_en_ch15.text = "Calibration Pulse Ch 47: " + this.cal_en_ch15.value;
+		this.cal_en_ch14.text = "Calibration Pulse Ch 46: " + this.cal_en_ch14.value;
+		this.cal_en_ch13.text = "Calibration Pulse Ch 45: " + this.cal_en_ch13.value;
+		this.cal_en_ch12.text = "Calibration Pulse Ch 44: " + this.cal_en_ch12.value;
+		this.cal_en_ch11.text = "Calibration Pulse Ch 43: " + this.cal_en_ch11.value;
+		this.cal_en_ch10.text = "Calibration Pulse Ch 42: " + this.cal_en_ch10.value;
+		this.cal_en_ch9.text = "Calibration Pulse Ch 41: " + this.cal_en_ch9.value;
+		this.cal_en_ch8.text = "Calibration Pulse Ch 40: " + this.cal_en_ch8.value;
+		this.cal_en_ch7.text = "Calibration Pulse Ch 39: " + this.cal_en_ch7.value;
+		this.cal_en_ch6.text = "Calibration Pulse Ch 38: " + this.cal_en_ch6.value;
+		this.cal_en_ch5.text = "Calibration Pulse Ch 37: " + this.cal_en_ch5.value;
+		this.cal_en_ch4.text = "Calibration Pulse Ch 36: " + this.cal_en_ch4.value;
+		this.cal_en_ch3.text = "Calibration Pulse Ch 35: " + this.cal_en_ch3.value;
+		this.cal_en_ch2.text = "Calibration Pulse Ch 34: " + this.cal_en_ch2.value;
+		this.cal_en_ch1.text = "Calibration Pulse Ch 33: " + this.cal_en_ch1.value;
+		this.cal_en_ch0.text = "Calibration Pulse Ch 32: " + this.cal_en_ch0.value;
+	},
+	Reg106: function(sig) {
+		this.cal_en_ch31 = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch30 = {value:(sig>>30)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch29 = {value:(sig>>29)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch28 = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch27 = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch26 = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch25 = {value:(sig>>25)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch24 = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch23 = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch22 = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch21 = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch20 = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch19 = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch18 = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch17 = {value:(sig>>17)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch16 = {value:(sig>>16)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch15 = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch14 = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch13 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch12 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch11 = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch10 = {value:(sig>>10)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch9 = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch8 = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch7 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch6 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch5 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch4 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch3 = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch2 = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch0 = {value:(sig>>0)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch31.text = "Calibration Pulse Ch 95: " + this.cal_en_ch31.value;
+		this.cal_en_ch30.text = "Calibration Pulse Ch 94: " + this.cal_en_ch30.value;
+		this.cal_en_ch29.text = "Calibration Pulse Ch 93: " + this.cal_en_ch29.value;
+		this.cal_en_ch28.text = "Calibration Pulse Ch 92: " + this.cal_en_ch28.value;
+		this.cal_en_ch27.text = "Calibration Pulse Ch 91: " + this.cal_en_ch27.value;
+		this.cal_en_ch26.text = "Calibration Pulse Ch 90: " + this.cal_en_ch26.value;
+		this.cal_en_ch25.text = "Calibration Pulse Ch 89: " + this.cal_en_ch25.value;
+		this.cal_en_ch24.text = "Calibration Pulse Ch 88: " + this.cal_en_ch24.value;
+		this.cal_en_ch23.text = "Calibration Pulse Ch 87: " + this.cal_en_ch23.value;
+		this.cal_en_ch22.text = "Calibration Pulse Ch 86: " + this.cal_en_ch22.value;
+		this.cal_en_ch21.text = "Calibration Pulse Ch 85: " + this.cal_en_ch21.value;
+		this.cal_en_ch20.text = "Calibration Pulse Ch 84: " + this.cal_en_ch20.value;
+		this.cal_en_ch19.text = "Calibration Pulse Ch 83: " + this.cal_en_ch19.value;
+		this.cal_en_ch18.text = "Calibration Pulse Ch 82: " + this.cal_en_ch18.value;
+		this.cal_en_ch17.text = "Calibration Pulse Ch 81: " + this.cal_en_ch17.value;
+		this.cal_en_ch16.text = "Calibration Pulse Ch 80: " + this.cal_en_ch16.value;
+		this.cal_en_ch15.text = "Calibration Pulse Ch 79: " + this.cal_en_ch15.value;
+		this.cal_en_ch14.text = "Calibration Pulse Ch 78: " + this.cal_en_ch14.value;
+		this.cal_en_ch13.text = "Calibration Pulse Ch 77: " + this.cal_en_ch13.value;
+		this.cal_en_ch12.text = "Calibration Pulse Ch 76: " + this.cal_en_ch12.value;
+		this.cal_en_ch11.text = "Calibration Pulse Ch 75: " + this.cal_en_ch11.value;
+		this.cal_en_ch10.text = "Calibration Pulse Ch 74: " + this.cal_en_ch10.value;
+		this.cal_en_ch9.text = "Calibration Pulse Ch 73: " + this.cal_en_ch9.value;
+		this.cal_en_ch8.text = "Calibration Pulse Ch 72: " + this.cal_en_ch8.value;
+		this.cal_en_ch7.text = "Calibration Pulse Ch 71: " + this.cal_en_ch7.value;
+		this.cal_en_ch6.text = "Calibration Pulse Ch 70: " + this.cal_en_ch6.value;
+		this.cal_en_ch5.text = "Calibration Pulse Ch 69: " + this.cal_en_ch5.value;
+		this.cal_en_ch4.text = "Calibration Pulse Ch 68: " + this.cal_en_ch4.value;
+		this.cal_en_ch3.text = "Calibration Pulse Ch 67: " + this.cal_en_ch3.value;
+		this.cal_en_ch2.text = "Calibration Pulse Ch 66: " + this.cal_en_ch2.value;
+		this.cal_en_ch1.text = "Calibration Pulse Ch 65: " + this.cal_en_ch1.value;
+		this.cal_en_ch0.text = "Calibration Pulse Ch 64: " + this.cal_en_ch0.value;
+	},
+	Reg107: function(sig) {
+		this.cal_en_ch31 = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch30 = {value:(sig>>30)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch29 = {value:(sig>>29)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch28 = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch27 = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch26 = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch25 = {value:(sig>>25)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch24 = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch23 = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch22 = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch21 = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch20 = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch19 = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch18 = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch17 = {value:(sig>>17)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch16 = {value:(sig>>16)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch15 = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch14 = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch13 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch12 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch11 = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch10 = {value:(sig>>10)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch9 = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch8 = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch7 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch6 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch5 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch4 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch3 = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch2 = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch0 = {value:(sig>>0)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch31.text = "Calibration Pulse Ch 127: " + this.cal_en_ch31.value;
+		this.cal_en_ch30.text = "Calibration Pulse Ch 126: " + this.cal_en_ch30.value;
+		this.cal_en_ch29.text = "Calibration Pulse Ch 125: " + this.cal_en_ch29.value;
+		this.cal_en_ch28.text = "Calibration Pulse Ch 124: " + this.cal_en_ch28.value;
+		this.cal_en_ch27.text = "Calibration Pulse Ch 123: " + this.cal_en_ch27.value;
+		this.cal_en_ch26.text = "Calibration Pulse Ch 122: " + this.cal_en_ch26.value;
+		this.cal_en_ch25.text = "Calibration Pulse Ch 121: " + this.cal_en_ch25.value;
+		this.cal_en_ch24.text = "Calibration Pulse Ch 120: " + this.cal_en_ch24.value;
+		this.cal_en_ch23.text = "Calibration Pulse Ch 119: " + this.cal_en_ch23.value;
+		this.cal_en_ch22.text = "Calibration Pulse Ch 118: " + this.cal_en_ch22.value;
+		this.cal_en_ch21.text = "Calibration Pulse Ch 117: " + this.cal_en_ch21.value;
+		this.cal_en_ch20.text = "Calibration Pulse Ch 116: " + this.cal_en_ch20.value;
+		this.cal_en_ch19.text = "Calibration Pulse Ch 115: " + this.cal_en_ch19.value;
+		this.cal_en_ch18.text = "Calibration Pulse Ch 114: " + this.cal_en_ch18.value;
+		this.cal_en_ch17.text = "Calibration Pulse Ch 113: " + this.cal_en_ch17.value;
+		this.cal_en_ch16.text = "Calibration Pulse Ch 112: " + this.cal_en_ch16.value;
+		this.cal_en_ch15.text = "Calibration Pulse Ch 111: " + this.cal_en_ch15.value;
+		this.cal_en_ch14.text = "Calibration Pulse Ch 110: " + this.cal_en_ch14.value;
+		this.cal_en_ch13.text = "Calibration Pulse Ch 109: " + this.cal_en_ch13.value;
+		this.cal_en_ch12.text = "Calibration Pulse Ch 108: " + this.cal_en_ch12.value;
+		this.cal_en_ch11.text = "Calibration Pulse Ch 107: " + this.cal_en_ch11.value;
+		this.cal_en_ch10.text = "Calibration Pulse Ch 106: " + this.cal_en_ch10.value;
+		this.cal_en_ch9.text = "Calibration Pulse Ch 105: " + this.cal_en_ch9.value;
+		this.cal_en_ch8.text = "Calibration Pulse Ch 104: " + this.cal_en_ch8.value;
+		this.cal_en_ch7.text = "Calibration Pulse Ch 103: " + this.cal_en_ch7.value;
+		this.cal_en_ch6.text = "Calibration Pulse Ch 102: " + this.cal_en_ch6.value;
+		this.cal_en_ch5.text = "Calibration Pulse Ch 101: " + this.cal_en_ch5.value;
+		this.cal_en_ch4.text = "Calibration Pulse Ch 100: " + this.cal_en_ch4.value;
+		this.cal_en_ch3.text = "Calibration Pulse Ch 99: " + this.cal_en_ch3.value;
+		this.cal_en_ch2.text = "Calibration Pulse Ch 98: " + this.cal_en_ch2.value;
+		this.cal_en_ch1.text = "Calibration Pulse Ch 97: " + this.cal_en_ch1.value;
+		this.cal_en_ch0.text = "Calibration Pulse Ch 96: " + this.cal_en_ch0.value;
+	},
+	Reg108: function(sig) {
+		this.cal_en_ch31 = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch30 = {value:(sig>>30)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch29 = {value:(sig>>29)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch28 = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch27 = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch26 = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch25 = {value:(sig>>25)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch24 = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch23 = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch22 = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch21 = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch20 = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch19 = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch18 = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch17 = {value:(sig>>17)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch16 = {value:(sig>>16)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch15 = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch14 = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch13 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch12 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch11 = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch10 = {value:(sig>>10)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch9 = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch8 = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch7 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch6 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch5 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch4 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch3 = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch2 = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch0 = {value:(sig>>0)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch31.text = "Calibration Pulse Ch 159: " + this.cal_en_ch31.value;
+		this.cal_en_ch30.text = "Calibration Pulse Ch 158: " + this.cal_en_ch30.value;
+		this.cal_en_ch29.text = "Calibration Pulse Ch 157: " + this.cal_en_ch29.value;
+		this.cal_en_ch28.text = "Calibration Pulse Ch 156: " + this.cal_en_ch28.value;
+		this.cal_en_ch27.text = "Calibration Pulse Ch 155: " + this.cal_en_ch27.value;
+		this.cal_en_ch26.text = "Calibration Pulse Ch 154: " + this.cal_en_ch26.value;
+		this.cal_en_ch25.text = "Calibration Pulse Ch 153: " + this.cal_en_ch25.value;
+		this.cal_en_ch24.text = "Calibration Pulse Ch 152: " + this.cal_en_ch24.value;
+		this.cal_en_ch23.text = "Calibration Pulse Ch 151: " + this.cal_en_ch23.value;
+		this.cal_en_ch22.text = "Calibration Pulse Ch 150: " + this.cal_en_ch22.value;
+		this.cal_en_ch21.text = "Calibration Pulse Ch 149: " + this.cal_en_ch21.value;
+		this.cal_en_ch20.text = "Calibration Pulse Ch 148: " + this.cal_en_ch20.value;
+		this.cal_en_ch19.text = "Calibration Pulse Ch 147: " + this.cal_en_ch19.value;
+		this.cal_en_ch18.text = "Calibration Pulse Ch 146: " + this.cal_en_ch18.value;
+		this.cal_en_ch17.text = "Calibration Pulse Ch 145: " + this.cal_en_ch17.value;
+		this.cal_en_ch16.text = "Calibration Pulse Ch 144: " + this.cal_en_ch16.value;
+		this.cal_en_ch15.text = "Calibration Pulse Ch 143: " + this.cal_en_ch15.value;
+		this.cal_en_ch14.text = "Calibration Pulse Ch 142: " + this.cal_en_ch14.value;
+		this.cal_en_ch13.text = "Calibration Pulse Ch 141: " + this.cal_en_ch13.value;
+		this.cal_en_ch12.text = "Calibration Pulse Ch 140: " + this.cal_en_ch12.value;
+		this.cal_en_ch11.text = "Calibration Pulse Ch 139: " + this.cal_en_ch11.value;
+		this.cal_en_ch10.text = "Calibration Pulse Ch 138: " + this.cal_en_ch10.value;
+		this.cal_en_ch9.text = "Calibration Pulse Ch 137: " + this.cal_en_ch9.value;
+		this.cal_en_ch8.text = "Calibration Pulse Ch 136: " + this.cal_en_ch8.value;
+		this.cal_en_ch7.text = "Calibration Pulse Ch 135: " + this.cal_en_ch7.value;
+		this.cal_en_ch6.text = "Calibration Pulse Ch 134: " + this.cal_en_ch6.value;
+		this.cal_en_ch5.text = "Calibration Pulse Ch 133: " + this.cal_en_ch5.value;
+		this.cal_en_ch4.text = "Calibration Pulse Ch 132: " + this.cal_en_ch4.value;
+		this.cal_en_ch3.text = "Calibration Pulse Ch 131: " + this.cal_en_ch3.value;
+		this.cal_en_ch2.text = "Calibration Pulse Ch 130: " + this.cal_en_ch2.value;
+		this.cal_en_ch1.text = "Calibration Pulse Ch 129: " + this.cal_en_ch1.value;
+		this.cal_en_ch0.text = "Calibration Pulse Ch 128: " + this.cal_en_ch0.value;
+	},
+	Reg109: function(sig) {
+		this.cal_en_ch31 = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch30 = {value:(sig>>30)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch29 = {value:(sig>>29)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch28 = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch27 = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch26 = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch25 = {value:(sig>>25)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch24 = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch23 = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch22 = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch21 = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch20 = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch19 = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch18 = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch17 = {value:(sig>>17)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch16 = {value:(sig>>16)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch15 = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch14 = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch13 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch12 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch11 = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch10 = {value:(sig>>10)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch9 = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch8 = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch7 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch6 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch5 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch4 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch3 = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch2 = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch0 = {value:(sig>>0)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch31.text = "Calibration Pulse Ch 191: " + this.cal_en_ch31.value;
+		this.cal_en_ch30.text = "Calibration Pulse Ch 190: " + this.cal_en_ch30.value;
+		this.cal_en_ch29.text = "Calibration Pulse Ch 189: " + this.cal_en_ch29.value;
+		this.cal_en_ch28.text = "Calibration Pulse Ch 188: " + this.cal_en_ch28.value;
+		this.cal_en_ch27.text = "Calibration Pulse Ch 187: " + this.cal_en_ch27.value;
+		this.cal_en_ch26.text = "Calibration Pulse Ch 186: " + this.cal_en_ch26.value;
+		this.cal_en_ch25.text = "Calibration Pulse Ch 185: " + this.cal_en_ch25.value;
+		this.cal_en_ch24.text = "Calibration Pulse Ch 184: " + this.cal_en_ch24.value;
+		this.cal_en_ch23.text = "Calibration Pulse Ch 183: " + this.cal_en_ch23.value;
+		this.cal_en_ch22.text = "Calibration Pulse Ch 182: " + this.cal_en_ch22.value;
+		this.cal_en_ch21.text = "Calibration Pulse Ch 181: " + this.cal_en_ch21.value;
+		this.cal_en_ch20.text = "Calibration Pulse Ch 180: " + this.cal_en_ch20.value;
+		this.cal_en_ch19.text = "Calibration Pulse Ch 179: " + this.cal_en_ch19.value;
+		this.cal_en_ch18.text = "Calibration Pulse Ch 178: " + this.cal_en_ch18.value;
+		this.cal_en_ch17.text = "Calibration Pulse Ch 177: " + this.cal_en_ch17.value;
+		this.cal_en_ch16.text = "Calibration Pulse Ch 176: " + this.cal_en_ch16.value;
+		this.cal_en_ch15.text = "Calibration Pulse Ch 175: " + this.cal_en_ch15.value;
+		this.cal_en_ch14.text = "Calibration Pulse Ch 174: " + this.cal_en_ch14.value;
+		this.cal_en_ch13.text = "Calibration Pulse Ch 173: " + this.cal_en_ch13.value;
+		this.cal_en_ch12.text = "Calibration Pulse Ch 172: " + this.cal_en_ch12.value;
+		this.cal_en_ch11.text = "Calibration Pulse Ch 171: " + this.cal_en_ch11.value;
+		this.cal_en_ch10.text = "Calibration Pulse Ch 170: " + this.cal_en_ch10.value;
+		this.cal_en_ch9.text = "Calibration Pulse Ch 169: " + this.cal_en_ch9.value;
+		this.cal_en_ch8.text = "Calibration Pulse Ch 168: " + this.cal_en_ch8.value;
+		this.cal_en_ch7.text = "Calibration Pulse Ch 167: " + this.cal_en_ch7.value;
+		this.cal_en_ch6.text = "Calibration Pulse Ch 166: " + this.cal_en_ch6.value;
+		this.cal_en_ch5.text = "Calibration Pulse Ch 165: " + this.cal_en_ch5.value;
+		this.cal_en_ch4.text = "Calibration Pulse Ch 164: " + this.cal_en_ch4.value;
+		this.cal_en_ch3.text = "Calibration Pulse Ch 163: " + this.cal_en_ch3.value;
+		this.cal_en_ch2.text = "Calibration Pulse Ch 162: " + this.cal_en_ch2.value;
+		this.cal_en_ch1.text = "Calibration Pulse Ch 161: " + this.cal_en_ch1.value;
+		this.cal_en_ch0.text = "Calibration Pulse Ch 160: " + this.cal_en_ch0.value;
+	},
+	Reg110: function(sig) {
+		this.cal_en_ch31 = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch30 = {value:(sig>>30)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch29 = {value:(sig>>29)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch28 = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch27 = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch26 = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch25 = {value:(sig>>25)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch24 = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch23 = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch22 = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch21 = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch20 = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch19 = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch18 = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch17 = {value:(sig>>17)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch16 = {value:(sig>>16)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch15 = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch14 = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch13 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch12 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch11 = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch10 = {value:(sig>>10)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch9 = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch8 = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch7 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch6 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch5 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch4 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch3 = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch2 = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch0 = {value:(sig>>0)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch31.text = "Calibration Pulse Ch 223: " + this.cal_en_ch31.value;
+		this.cal_en_ch30.text = "Calibration Pulse Ch 222: " + this.cal_en_ch30.value;
+		this.cal_en_ch29.text = "Calibration Pulse Ch 221: " + this.cal_en_ch29.value;
+		this.cal_en_ch28.text = "Calibration Pulse Ch 220: " + this.cal_en_ch28.value;
+		this.cal_en_ch27.text = "Calibration Pulse Ch 219: " + this.cal_en_ch27.value;
+		this.cal_en_ch26.text = "Calibration Pulse Ch 218: " + this.cal_en_ch26.value;
+		this.cal_en_ch25.text = "Calibration Pulse Ch 217: " + this.cal_en_ch25.value;
+		this.cal_en_ch24.text = "Calibration Pulse Ch 216: " + this.cal_en_ch24.value;
+		this.cal_en_ch23.text = "Calibration Pulse Ch 215: " + this.cal_en_ch23.value;
+		this.cal_en_ch22.text = "Calibration Pulse Ch 214: " + this.cal_en_ch22.value;
+		this.cal_en_ch21.text = "Calibration Pulse Ch 213: " + this.cal_en_ch21.value;
+		this.cal_en_ch20.text = "Calibration Pulse Ch 212: " + this.cal_en_ch20.value;
+		this.cal_en_ch19.text = "Calibration Pulse Ch 211: " + this.cal_en_ch19.value;
+		this.cal_en_ch18.text = "Calibration Pulse Ch 210: " + this.cal_en_ch18.value;
+		this.cal_en_ch17.text = "Calibration Pulse Ch 209: " + this.cal_en_ch17.value;
+		this.cal_en_ch16.text = "Calibration Pulse Ch 208: " + this.cal_en_ch16.value;
+		this.cal_en_ch15.text = "Calibration Pulse Ch 207: " + this.cal_en_ch15.value;
+		this.cal_en_ch14.text = "Calibration Pulse Ch 206: " + this.cal_en_ch14.value;
+		this.cal_en_ch13.text = "Calibration Pulse Ch 205: " + this.cal_en_ch13.value;
+		this.cal_en_ch12.text = "Calibration Pulse Ch 204: " + this.cal_en_ch12.value;
+		this.cal_en_ch11.text = "Calibration Pulse Ch 203: " + this.cal_en_ch11.value;
+		this.cal_en_ch10.text = "Calibration Pulse Ch 202: " + this.cal_en_ch10.value;
+		this.cal_en_ch9.text = "Calibration Pulse Ch 201: " + this.cal_en_ch9.value;
+		this.cal_en_ch8.text = "Calibration Pulse Ch 200: " + this.cal_en_ch8.value;
+		this.cal_en_ch7.text = "Calibration Pulse Ch 199: " + this.cal_en_ch7.value;
+		this.cal_en_ch6.text = "Calibration Pulse Ch 198: " + this.cal_en_ch6.value;
+		this.cal_en_ch5.text = "Calibration Pulse Ch 197: " + this.cal_en_ch5.value;
+		this.cal_en_ch4.text = "Calibration Pulse Ch 196: " + this.cal_en_ch4.value;
+		this.cal_en_ch3.text = "Calibration Pulse Ch 195: " + this.cal_en_ch3.value;
+		this.cal_en_ch2.text = "Calibration Pulse Ch 194: " + this.cal_en_ch2.value;
+		this.cal_en_ch1.text = "Calibration Pulse Ch 193: " + this.cal_en_ch1.value;
+		this.cal_en_ch0.text = "Calibration Pulse Ch 192: " + this.cal_en_ch0.value;
+	},
+	Reg111: function(sig) {
+		this.cal_en_ch31 = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch30 = {value:(sig>>30)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch29 = {value:(sig>>29)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch28 = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch27 = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch26 = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch25 = {value:(sig>>25)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch24 = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch23 = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch22 = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch21 = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch20 = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch19 = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch18 = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch17 = {value:(sig>>17)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch16 = {value:(sig>>16)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch15 = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch14 = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch13 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch12 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch11 = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch10 = {value:(sig>>10)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch9 = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch8 = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch7 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch6 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch5 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch4 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch3 = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch2 = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch0 = {value:(sig>>0)&1,type:'select',options:{0:'disabled',1:'enabled'}}
+		this.cal_en_ch31.text = "Calibration Pulse Ch 255: " + this.cal_en_ch31.value;
+		this.cal_en_ch30.text = "Calibration Pulse Ch 254: " + this.cal_en_ch30.value;
+		this.cal_en_ch29.text = "Calibration Pulse Ch 253: " + this.cal_en_ch29.value;
+		this.cal_en_ch28.text = "Calibration Pulse Ch 252: " + this.cal_en_ch28.value;
+		this.cal_en_ch27.text = "Calibration Pulse Ch 251: " + this.cal_en_ch27.value;
+		this.cal_en_ch26.text = "Calibration Pulse Ch 250: " + this.cal_en_ch26.value;
+		this.cal_en_ch25.text = "Calibration Pulse Ch 249: " + this.cal_en_ch25.value;
+		this.cal_en_ch24.text = "Calibration Pulse Ch 248: " + this.cal_en_ch24.value;
+		this.cal_en_ch23.text = "Calibration Pulse Ch 247: " + this.cal_en_ch23.value;
+		this.cal_en_ch22.text = "Calibration Pulse Ch 246: " + this.cal_en_ch22.value;
+		this.cal_en_ch21.text = "Calibration Pulse Ch 245: " + this.cal_en_ch21.value;
+		this.cal_en_ch20.text = "Calibration Pulse Ch 244: " + this.cal_en_ch20.value;
+		this.cal_en_ch19.text = "Calibration Pulse Ch 243: " + this.cal_en_ch19.value;
+		this.cal_en_ch18.text = "Calibration Pulse Ch 242: " + this.cal_en_ch18.value;
+		this.cal_en_ch17.text = "Calibration Pulse Ch 241: " + this.cal_en_ch17.value;
+		this.cal_en_ch16.text = "Calibration Pulse Ch 240: " + this.cal_en_ch16.value;
+		this.cal_en_ch15.text = "Calibration Pulse Ch 239: " + this.cal_en_ch15.value;
+		this.cal_en_ch14.text = "Calibration Pulse Ch 238: " + this.cal_en_ch14.value;
+		this.cal_en_ch13.text = "Calibration Pulse Ch 237: " + this.cal_en_ch13.value;
+		this.cal_en_ch12.text = "Calibration Pulse Ch 236: " + this.cal_en_ch12.value;
+		this.cal_en_ch11.text = "Calibration Pulse Ch 235: " + this.cal_en_ch11.value;
+		this.cal_en_ch10.text = "Calibration Pulse Ch 234: " + this.cal_en_ch10.value;
+		this.cal_en_ch9.text = "Calibration Pulse Ch 233: " + this.cal_en_ch9.value;
+		this.cal_en_ch8.text = "Calibration Pulse Ch 232: " + this.cal_en_ch8.value;
+		this.cal_en_ch7.text = "Calibration Pulse Ch 231: " + this.cal_en_ch7.value;
+		this.cal_en_ch6.text = "Calibration Pulse Ch 230: " + this.cal_en_ch6.value;
+		this.cal_en_ch5.text = "Calibration Pulse Ch 229: " + this.cal_en_ch5.value;
+		this.cal_en_ch4.text = "Calibration Pulse Ch 228: " + this.cal_en_ch4.value;
+		this.cal_en_ch3.text = "Calibration Pulse Ch 227: " + this.cal_en_ch3.value;
+		this.cal_en_ch2.text = "Calibration Pulse Ch 226: " + this.cal_en_ch2.value;
+		this.cal_en_ch1.text = "Calibration Pulse Ch 225: " + this.cal_en_ch1.value;
+		this.cal_en_ch0.text = "Calibration Pulse Ch 224: " + this.cal_en_ch0.value;
+	},
+	Reg112 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch3 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch2 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch1 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch0 Hit Count: " + this.ch0.value;
+	},
+	Reg113 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch7 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch6 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch5 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch4 Hit Count: " + this.ch0.value;
+	},
+	Reg114 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch11 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch10 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch9 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch8 Hit Count: " + this.ch0.value;
+	},
+	Reg115 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch15 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch14 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch13 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch12 Hit Count: " + this.ch0.value;
+	},
+	Reg116 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch19 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch18 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch17 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch16 Hit Count: " + this.ch0.value;
+	},
+	Reg117 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch23 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch22 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch21 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch20 Hit Count: " + this.ch0.value;
+	},
+	Reg118 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch27 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch26 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch25 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch24 Hit Count: " + this.ch0.value;
+	},
+	Reg119 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch31 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch30 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch29 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch28 Hit Count: " + this.ch0.value;
+	},
+	Reg120 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch35 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch34 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch33 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch32 Hit Count: " + this.ch0.value;
+	},
+	Reg121 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch39 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch38 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch37 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch36 Hit Count: " + this.ch0.value;
+	},
+	Reg122 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch43 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch42 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch41 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch40 Hit Count: " + this.ch0.value;
+	},
+	Reg123 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch47 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch46 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch45 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch44 Hit Count: " + this.ch0.value;
+	},
+	Reg124 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch51 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch50 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch49 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch48 Hit Count: " + this.ch0.value;
+	},
+	Reg125 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch55 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch54 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch53 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch52 Hit Count: " + this.ch0.value;
+	},
+	Reg126 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch59 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch58 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch57 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch56 Hit Count: " + this.ch0.value;
+	},
+	Reg127 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch63 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch62 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch61 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch60 Hit Count: " + this.ch0.value;
+	},
+	Reg128 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch67 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch66 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch65 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch64 Hit Count: " + this.ch0.value;
+	},
+	Reg129 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch71 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch70 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch69 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch68 Hit Count: " + this.ch0.value;
+	},
+	Reg130 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch75 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch74 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch73 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch72 Hit Count: " + this.ch0.value;
+	},
+	Reg131 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch79 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch78 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch77 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch76 Hit Count: " + this.ch0.value;
+	},
+	Reg132 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch83 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch82 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch81 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch80 Hit Count: " + this.ch0.value;
+	},
+	Reg133 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch87 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch86 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch85 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch84 Hit Count: " + this.ch0.value;
+	},
+	Reg134 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch91 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch90 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch89 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch88 Hit Count: " + this.ch0.value;
+	},
+	Reg135 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch95 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch94 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch93 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch92 Hit Count: " + this.ch0.value;
+	},
+	Reg136 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch99 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch98 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch97 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch96 Hit Count: " + this.ch0.value;
+	},
+	Reg137 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch103 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch102 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch101 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch100 Hit Count: " + this.ch0.value;
+	},
+	Reg138 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch107 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch106 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch105 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch104 Hit Count: " + this.ch0.value;
+	},
+	Reg139 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch111 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch110 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch109 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch108 Hit Count: " + this.ch0.value;
+	},
+	Reg140 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch115 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch114 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch113 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch112 Hit Count: " + this.ch0.value;
+	},
+	Reg141 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch119 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch118 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch117 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch116 Hit Count: " + this.ch0.value;
+	},
+	Reg142 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch123 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch122 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch121 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch120 Hit Count: " + this.ch0.value;
+	},
+	Reg143 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch127 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch126 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch125 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch124 Hit Count: " + this.ch0.value;
+	},
+	Reg144 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch131 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch130 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch129 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch128 Hit Count: " + this.ch0.value;
+	},
+	Reg145 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch135 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch134 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch133 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch132 Hit Count: " + this.ch0.value;
+	},
+	Reg146 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch139 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch138 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch137 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch136 Hit Count: " + this.ch0.value;
+	},
+	Reg147 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch143 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch142 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch141 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch140 Hit Count: " + this.ch0.value;
+	},
+	Reg148 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch147 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch146 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch145 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch144 Hit Count: " + this.ch0.value;
+	},
+	Reg149 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch151 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch150 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch149 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch148 Hit Count: " + this.ch0.value;
+	},
+	Reg150 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch155 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch154 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch153 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch152 Hit Count: " + this.ch0.value;
+	},
+	Reg151 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch159 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch158 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch157 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch156 Hit Count: " + this.ch0.value;
+	},
+	Reg152 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch163 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch162 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch161 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch160 Hit Count: " + this.ch0.value;
+	},
+	Reg153 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch167 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch166 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch165 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch164 Hit Count: " + this.ch0.value;
+	},
+	Reg154 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch171 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch170 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch169 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch168 Hit Count: " + this.ch0.value;
+	},
+	Reg155 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch175 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch174 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch173 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch172 Hit Count: " + this.ch0.value;
+	},
+	Reg156 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch179 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch178 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch177 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch176 Hit Count: " + this.ch0.value;
+	},
+	Reg157 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch183 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch182 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch181 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch180 Hit Count: " + this.ch0.value;
+	},
+	Reg158 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch187 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch186 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch185 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch184 Hit Count: " + this.ch0.value;
+	},
+	Reg159 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch191 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch190 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch189 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch188 Hit Count: " + this.ch0.value;
+	},
+	Reg160 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch195 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch194 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch193 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch192 Hit Count: " + this.ch0.value;
+	},
+	Reg161 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch199 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch198 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch197 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch196 Hit Count: " + this.ch0.value;
+	},
+	Reg162 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch203 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch202 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch201 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch200 Hit Count: " + this.ch0.value;
+	},
+	Reg163 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch207 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch206 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch205 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch204 Hit Count: " + this.ch0.value;
+	},
+	Reg164 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch211 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch210 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch209 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch208 Hit Count: " + this.ch0.value;
+	},
+	Reg165 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch215 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch214 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch213 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch212 Hit Count: " + this.ch0.value;
+	},
+	Reg166 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch219 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch218 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch217 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch216 Hit Count: " + this.ch0.value;
+	},
+	Reg167 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch223 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch222 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch221 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch220 Hit Count: " + this.ch0.value;
+	},
+	Reg168 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch227 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch226 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch225 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch224 Hit Count: " + this.ch0.value;
+	},
+	Reg169 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch231 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch230 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch229 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch228 Hit Count: " + this.ch0.value;
+	},
+	Reg170 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch235 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch234 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch233 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch232 Hit Count: " + this.ch0.value;
+	},
+	Reg171 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch239 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch238 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch237 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch236 Hit Count: " + this.ch0.value;
+	},
+	Reg172 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch243 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch242 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch241 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch240 Hit Count: " + this.ch0.value;
+	},
+	Reg173 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch247 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch246 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch245 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch244 Hit Count: " + this.ch0.value;
+	},
+	Reg174 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch251 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch250 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch249 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch248 Hit Count: " + this.ch0.value;
+	},
+	Reg175 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch255 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch254 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch253 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch252 Hit Count: " + this.ch0.value;
+	},
+}
+
+//Create value fields for current register and initialize with defaults
+function Initialize() {
+	document.getElementById('testdiv').innerHTML="";
+	var reg = 'Reg' + document.getElementById('register').value;
+	var def_sig = new Registers[reg](defaults[reg]); // Create new instance of register with its default signal
+	for (x in def_sig) {  // Create value fields for the register, and initialize with default values
+		if (def_sig[x].type!="unused") {
+		testdiv.appendChild(document.createElement('br'));
+		var textEl = document.createTextNode(def_sig[x].text.split(':')[0]+':');
+
+		if (def_sig[x].type=='select') {
+			var element = document.createElement('select');
+			for (var y in def_sig[x].options) {
+				var option = document.createElement('option')
+				option.setAttribute('value',y.toString());
+				option.appendChild(document.createTextNode(def_sig[x].options[y]));
+				element.appendChild(option);
+      			 }
+			selectItemByValue(element,def_sig[x].value);
+		} else if (def_sig[x].type=='input') {
+			var element = document.createElement('input');
+			element.setAttribute('value',def_sig[x].value);
+		} else if (def_sig[x].type=='checkbox') {
+			var element = document.createElement('input');
+			element.setAttribute('type','checkbox');
+			if (def_sig[x].value==def_sig[x].checked) element.setAttribute('checked',true);
+			else element.removeAttribute('checked');
+		} else if (def_sig[x].type=='binput') {
+			var element = document.createElement('input');
+			element.setAttribute('value',bin_string(def_sig[x].value,def_sig[x].n));
+			element.setAttribute('size',def_sig[x].n);
+		} else if (def_sig[x].type=='hexinput') {
+			var element = document.createElement('input');
+			element.setAttribute('value',hex_string(def_sig[x].value,def_sig[x].n));
+		}
+		element.setAttribute('id',x);
+		testdiv.appendChild(textEl);
+		testdiv.appendChild(element);
+		 }
+	}
+	
+}
+
+//Initialize value fields for current register, then convert signal to values
+function Convert() {
+	Initialize();
+	var format = document.getElementById('format').value;
+	var reg = 'Reg' + document.getElementById('register').value;
+	var sig = parseInt(document.getElementById('sig').value,format);
+	if ((sig<0) || (sig>max_test)) {alert('Invalid entry'); return;}
+	output = new Registers[reg](sig); // New instance of register using signal in field
+	for (x in output) { // Loop through register variables, assigning their values to corresponding value fields
+		if (output[x].type!="unused") {
+		var element = document.getElementById(x);
+		if (output[x].type=='select') selectItemByValue(element,output[x].value);
+		else if (output[x].type=='input') element.setAttribute('value',output[x].value);
+		else if (output[x].type=='checkbox') {
+			 (output[x].value==output[x].checked)?element.setAttribute('checked',true):element.removeAttribute('checked');
+		} else if (output[x].type=='binput') {
+			element.setAttribute('value',bin_string(output[x].value,output[x].n));
+		} else if (output[x].type=='hexinput') {
+			element.setAttribute('value',hex_string(output[x].value,output[x].n));
+		}
+		}
+	}
+	
+}
+
+//Convert info to signal
+function Convert2() {
+	var reg_id = document.getElementById('register').value;
+	var reg = 'Reg' + reg_id;
+	var s = new Registers[reg](defaults[reg]); // new instance of selected register	
+
+	for (var x in s) { // loop through parameters of register
+		if (s[x].type!='unused') { // not including unused bits
+		var element=document.getElementById(x); // select the corresponding value field
+		if (s[x].type=='select') {
+			for (var y in s[x].options) {
+				if (element.value == y) {s[x].value=y;}
+			}
+		} else if (s[x].type=='input') s[x].value = parseInt(element.value);
+		else if (s[x].type=='binput') s[x].value = parseInt(element.value,2);
+		else if (s[x].type=='hexinput') s[x].value = parseInt(element.value,16);
+		else if (s[x].type=='checkbox') element.checked?s[x].value=s[x].checked:s[x].value=s[x].unchecked;
+		}
+	}
+
+	var m = new Registers[reg](max_test); // new instance of the register, using maximum signal
+	var output="";
+	for (var x in s) { // assemble full signal in binary (using maximum signal to set length of each segment and pad with zeroes as appropriate)
+		var temp=parseInt(s[x].value);
+		var temp_m = parseInt(m[x].value);
+		if (temp>temp_m) {alert('Value '+temp+' in field '+x+' too large. Maximum of '+temp_m+'.'); break;}
+		temp=temp.toString(2);
+		temp_m=temp_m.toString(2);
+		while (temp.length<temp_m.length) temp='0'+temp;
+		output=output+temp; 
+	}
+	output = parseInt(output,2);
+	var format = document.getElementById('format').value;
+	if (format==2) output = bin_string(output,32);           // convert full signal to current format
+	else if (format==16) output = hex_string(output,8);
+	else output = output.toString(format);
+	document.getElementById('sig').value=output;
+}
+
+//Restore default values and signal for current register
+function RestoreDefaults() {
+	Initialize();
+	Convert2();
+}
+
+//Create and fill text field with current values/register (not current signal)
+function toText() {
+	document.getElementById('textdiv').innerHTML="";
+
+	var format = document.getElementById('format').value;
+	var reg_id = document.getElementById('register').value;
+	var reg = 'Reg' + reg_id;
+	var temp_sig = parseInt(document.getElementById('sig').value,format); // Store value in signal field
+	Convert2(); // Temporarily place value in signal field corresponding to value fields
+
+	var sig = parseInt(document.getElementById('sig').value,format);
+	var s = new Registers[reg](sig); // Create new instance of current register with signal  
+
+	if (format==2) temp_sig = bin_string(temp_sig,32);           
+	else if (format==16) temp_sig = hex_string(temp_sig,8);         // Restore value to signal field (in proper format)
+	else temp_sig = temp_sig.toString(format); 
+	document.getElementById('sig').value=temp_sig;
+
+	var text = "";
+	for (j in s) {
+		if(s[j].type!='unused') text = text + s[j].text + "\n";
+	}			     // Text output for current register instance
+	
+	var textbox = document.createElement('textarea');
+	textbox.setAttribute('id','textarea');
+	textbox.setAttribute('cols',70);
+	textbox.setAttribute('rows',15);
+	var div = document.getElementById('textdiv');          // Create area for text output
+	div.appendChild(document.createElement('br'));
+	div.appendChild(textbox);	
+	document.getElementById('textarea').value=text;
+	
+	var hide_button = document.createElement('button');
+	hide_button.setAttribute('id','hide_button');
+	hide_button_text = document.createTextNode('Hide text');
+	hide_button.appendChild(hide_button_text);
+	div.appendChild(document.createElement('br'));
+	div.appendChild(hide_button);
+	hide_button.addEventListener('click',function() {
+		div.innerHTML="";
+	},false);
+
+	var download_button = document.createElement('button');
+	download_button.setAttribute('id','download_button');
+	var button_text = document.createTextNode('Download text file');      // Create download button
+	download_button.appendChild(button_text);
+
+	div.appendChild(document.createElement('br'));
+	div.appendChild(document.createElement('br'));
+	div.appendChild(download_button);
+
+	download_button.addEventListener('click',function() {
+
+	var text = document.getElementById('textarea').value;
+	var filename = prompt("","filename.txt");                    // Create click event for download button
+	
+	download(filename,text);
+},false);
+}
+
+//Download "text" into "filename"
+function download(filename, text) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+
+    document.body.removeChild(element);
+}
+
+//Convert int "a" to binary string of length "n"
+function bin_string(a,n) {
+	a = a.toString(2);
+	while (a.length < n) a = '0' + a;
+	return a;
+}
+
+//Convert int "a" to hex string of length "n"
+function hex_string(a,n) { 
+	var temp = '0x1'
+	while (temp.length < n+3) temp = temp + '0'; 
+	temp = parseInt(temp,16);
+	return (a+temp).toString(16).substr(-n).toUpperCase();	
+}
+
+//Select option with value "value" from dropdown menu "elmnt"
+function selectItemByValue(element, value){
+
+  for(var j=0; j < element.options.length; j++)
+  {
+    if(element.options[j].value == value) {
+      element.selectedIndex = j;
+      break;
+    }
+  } 
+}
+</script>
+</head>
+<body>
+
+<h2>ABCStar</h2>
+
+<div id='rightHalf' class='right'>
+<div id='desc' class='right'></div>
+<div class='line right'></div>
+<div id="reg" class='left'></div>
+
+</div>
+Register:</br>
+<input id='register'></input> <button onclick='Initialize();'>Select register</button></br>
+Signal (32 bit): </br>
+<input id='sig' size='32'></input></br>
+<select id='format'>
+<option value=16>Hexadecimal</option>
+<option value=2>Binary</option>
+<option value=10>Decimal</option>
+</select>
+<button onclick='Convert();'>Signal->Info</button> 
+<button onclick='Convert2();'>Info->Signal</button>
+<button onclick='RestoreDefaults();'>Restore Defaults</button></br>
+<div id='testdiv'></div></br>
+	<button onclick='toText();'>Generate text</button></br>
+<div id='textdiv'>
+
+</div>
+</body> 
+</html>
