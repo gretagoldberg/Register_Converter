@@ -189,7 +189,7 @@ Reg5 : function(sig) {
     this.ana_set.text = "Analog MUX setting:" +this.ana_set.value;
 },
 Reg6 : function(sig) {
-    this.nontrivial_constant = {value:(sig>>8)&0xffffff, type:'unused'};
+    this.nontrivial_constant = {value:(sig>>8)&0xffffff, type:'select', options:{24'hdeadbe:'yes'}};
     this.unused1 = {value:(sig>>5)&7, type:'unused'};
     this.prlp_sending = {value:(sig>>4)&1, type:'select', options:{0:'disabled', 1:'enabled'}};
 	this.unused2 = {value:(sig>>2)&3,type:'unused'};
