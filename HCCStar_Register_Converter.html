@@ -492,8 +492,8 @@ Reg43 : function(sig) {
 	this.unused6 = {value:(sig>>6)&1,type:'unused'};
     this.Bg_RangeLow = {value:(sig>>5)&1,type:'input'};
 	this.BG_setting = {value:sig&0x1f,type:'input'};
-    this.clk_disable_sel.text ="Disabled clock: " + this.clk_disable_sel.value;
-    this.clk_disable.text = "Disabled Clock Phase: " + this.clk_disable.value;
+    this.clk_disable_sel.text ="Disabled clock: " + this.clk_disable_sel.options[this.clk_disable_sel.value];
+    this.clk_disable.text = "Disabled Clock Phase: " + this.clk_disable.options[this.clk_disable.value];
 	this.efuse_prog_bit.text = "Bit of eFuse to set to '1' when programming: " + bin_string(this.efuse_prog_bit.value,5);
 	this.GPO1.text = "General Purpose Output pad 1 control: " + this.GPO1.options[this.GPO1.value];	
 	this.GPO0.text = "General Purpose Output pad 0 control: " + this.GPO0.options[this.GPO0.value];
