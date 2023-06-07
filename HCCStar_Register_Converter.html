@@ -195,7 +195,7 @@ Reg6 : function(sig) {
 	this.unused2 = {value:(sig>>2)&3,type:'unused'};
 	this.GPI1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.GPI0 = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
-    this.nontrivial_constant.text = "non-trivial constant: "+ this.nontrivial_constant.options[this.nontrivial_constant.value];
+    this.nontrivial_constant.text = "non-trivial constant: " + this.nontrivial_constant.value;
     this.prlp_sending.text = "Sending PRLP commands to ABCs: " + this.prlp_sending.options[this.prlp_sending.value];
 	this.GPI1.text = "Status of GPI1 pad: " + this.GPI1.options[this.GPI1.value];
 	this.GPI0.text = "Status of GPI0 pad: " + this.GPI0.options[this.GPI0.value];
@@ -285,6 +285,7 @@ Reg15 : function(sig) {
 	this.R3L1_locked.text = "R3L1 Locked Flag: " + (this.R3L1_locked.checked?'Yes':'No');
 },
 Reg16 : function(sig) {
+    this.unused = {value:(sig>>5)&0xfffffff, type: 'unused'};
 	this.R3L1_errcount_clr = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
 	this.lcb_errcount_clr = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
 	this.eFuseL = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
@@ -298,6 +299,7 @@ Reg16 : function(sig) {
 },
 Reg17 : function(sig) {
 	this.comm_id = {value:(sig>>28)&0xf,type:'input'};
+    this.unused = {value:(sig>>24)&0x1f, type:'unused'};
 	this.fuse_id = {value:sig&0xffffff,type:'input'};
 	this.comm_id.text = "Communications ID: " + this.comm_id.value;
 	this.fuse_id.text = "eFuse Serial Number: " + this.fuse_id.value;
@@ -349,13 +351,15 @@ Reg34 : function(sig) {
 	this.fd_di8_fD.text  = "ABC Data In 8 Fine Delay: " + this.fd_di8_fD.value;
 },
 Reg35 : function(sig) {
-	this.unused = {value:(sig>>29)&7,type:'unused'};
+	this.unused1 = {value:(sig>>29)&7,type:'unused'};
     this.ePllPhase160MHz = {value:(sig>>24)&0x1f,type:'checkbox',checked:1,unchecked:0};
 	this.ePllEnablePhase = {value:(sig>>16)&0xff,type:'binput',n:8};
+    this.unused2 = {value:(sig>>14)&3,type:'unused'};
 	this.ePllReferenceFrequency = {value:(sig>>12)&3,type:'select',options:{1:'40 MHz',2:'80 MHz',3:'160 MHz'}};
    	this.ePllRes={value:(sig>>8)&0xf,type:'select',options:{0:'0.5 kOhm',1:'1 kOhm',2:'1.5 kOhm',3:'2 kOhm',4:'2.5 kOhm',
             5:'3 kOhm',6:'3.5 kOhm',7:'4 kOhm',8:'4.5 kOhm',9:'5 kOhm',10: '5.5 kOhm',11:'6 KOhm',12:'6.5 kOhm'
 		,13:'7 kOhm',14:'7.5 kOhm',15:'8 kOhm'}}; 
+    this.unused3 = {value:(sig>>5)&7,type:'unused'};
    	this.ePllCap={value:(sig>>4)&3, type:'select', options:{0:'30 pF',1:'40 pF',2:'50 pF',3:'70 pF'}}; 
    	this.ePllIcp={value:sig&0xf,type:'select',options:{0:'0 uA',1:'8.5 uA',2:'17 uA',3:'25.5 uA',4:'34 uA',5:'42.5 uA',
 						  6:'51 uA',7:'59.5 uA',8:'68 uA',9:'76.5 uA',10:'85 uA',11:'93.5 uA',
@@ -473,14 +477,19 @@ Reg42 : function(sig) {
 	this.trigger_mode.text = "Trigger Mode: " + this.trigger_mode.options[this.trigger_mode.value];
 },
 Reg43 : function(sig) {
+    this.unused1 = {value:(sig>>30)&3,type:'unused'};
 	this.clk_disable_sel = {value:(sig>>28)&0x1f,type:'select', options:{00:'40 MHz', 01:'Stave_clk (160MHz)', 10: 'clk160', 11: 'clk640'}};
+    this.unused2 = {value:(sig>>26)&3,type:'unused'};
     this.clk_disable = {value:(sig>>24)&0x1f,type:'select', options:{01:'A', 10: 'B', 11: 'C'}};
+    this.unused3 = {value:(sig>>21)&7,type:'unused'};
 	this.efuse_prog_bit = {value:(sig>>16)&0x1f,type:'binput',n:5};
+    this.unused4 = {value:(sig>>14)&3,type:'unused'};
 	this.GPO1 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.GPO0 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+    this.unused5 = {value:(sig>>9)&7,type:'unused'};
 	this.MaskHPR = {value:(sig>>8)&1,type:'checkbox',checked:1,unchecked:0};
     this.BGvdd_cnt_en = {value:(sig>>7)&1,type:'checkbox',checked:1,unchecked:0};
-	this.unused = {value:(sig>>6)&1,type:'unused'};
+	this.unused6 = {value:(sig>>6)&1,type:'unused'};
     this.Bg_RangeLow = {value:(sig>>5)&1,type:'input'};
 	this.BG_setting = {value:sig&0x1f,type:'input'};
     this.clk_disable_sel.text ="Disabled clock: " + this.clk_disable_sel.value;
@@ -494,19 +503,25 @@ Reg43 : function(sig) {
 	this.BG_setting.text = "Bandgap setting: " + this.BG_setting.value;
 },
 Reg44 : function(sig) {
+    this.unused1 = {value:(sig>>27)&0x1f,type:'unused'};
 	this.BCMM_squelch = {value:(sig>>16)&0x7ff,type:'binput',n:11};
+    this.unused2 = {value:(sig>>10)&0x7f, type:'unused'};
 	this.BCIDrstDelay = {value:sig&0x1ff,type:'input'};
 	this.BCMM_squelch.text = "Mask error block generation if only these channels have BCID mismatch errors: " + bin_string(this.BCMM_squelch.value,11);
 	this.BCIDrstDelay.text = "Delay before BCR takes effect: " + this.BCIDrstDelay.value;
 },
 Reg45 : function(sig) {
+    this.unused1 = {value:(sig>>5)&0x7ffffff,type:'unused'};
 	this.AMAC_SSSH = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+    this.unused2 = {value:(sig>>1)&7,type:'unused'};
 	this.ABC_ResetB = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
 	this.AMAC_SSSH.text = "AMAC Communications Reset: " + ((this.AMAC_SSSH.value==this.AMAC_SSSH.checked)?'Yes':'No');
 	this.ABC_ResetB.text = "ABCStars External Reset: " + ((this.ABC_ResetB.value==this.ABC_ResetB.checked)?'Yes':'No');
 },
 Reg46 : function(sig) {
+    this.unused1 = {value:(sig>>5)&0x7ffffff,type:'unused'};
 	this.AMAC_SSSH = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+    this.unused2 = {value:(sig>>1)&7,type:'unused'};
 	this.ABC_ResetB = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
 	this.AMAC_SSSH.text = "AMAC Communications Reset: " + ((this.AMAC_SSSH.value==this.AMAC_SSSH.checked)?'Yes':'No');
 	this.ABC_ResetB.text = "ABCStars External Reset: " + ((this.ABC_ResetB.value==this.ABC_ResetB.checked)?'Yes':'No');
@@ -518,11 +533,16 @@ Reg47 : function(sig) {
 	this.lcb_errcount_thr.text =  "LCB error count threshold: " + this.lcb_errcount_thr.value;
 },
 Reg48 : function(sig) {
+    this.unused1 = {value:(sig>>24)&0xff,type:'unused'};
 	this.therm_offset = {value:(sig>>20)&0xf,type:'select',options:{0: '0 mV',1:'16 mV',2:'30 mV',3:'46 mV',4:'79 mV',5:'95 mV', 6:'109 mV',7:'125 mV',8:'146 mV',9:'162 mV',10:'176 mV',11:'192 mV',12:'215 mV',13:'231 mV',14:'245 mV',15:'261 mV'}};
-	this.ana_set = {value:(sig>>16)&7,type:'select',options:{0:'Bandgap voltage',1:'Internal temperature',2:'Calibration input',3:'VDD_RAW',4:'VDD_REG',5:'Hybrid ground'}};
-	this.am_range = {value:(sig>>12)&1,type:'input'};
+	this.unused2 = {value:(sig>>19)&1,type:'unused'};
+    this.ana_set = {value:(sig>>16)&7,type:'select',options:{0:'Bandgap voltage',1:'Internal temperature',2:'Calibration input',3:'VDD_RAW',4:'VDD_REG',5:'Hybrid ground'}};
+	this.unused3 = {value:(sig>>13)&7,type:'unused'};
+    this.am_range = {value:(sig>>12)&1,type:'input'};
     this.am_IntSlope = {value:(sig>>8)&0xf,type:'input'};
+    this.unused4 = {value:(sig>>5)&7,type:'unused'};
 	this.am_calib = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
+    this.unused5 = {value:(sig>>1)&7,type:'unused'};
 	this.am_enable = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.therm_offset.text = "Output offset for temperature sensor: " + this.therm_offset.options[this.therm_offset.value];
 	this.ana_set.text = "Analog MUX select: " + this.ana_set.options[this.ana_set.value]; //
