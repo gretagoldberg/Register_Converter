@@ -56,7 +56,7 @@ var RegDesc =  ["Register(s):Description",
 		"31 Serial Number (Fuse)",
 		"32-34:Resets (WO)",
 		"40:CntSet (RW)",
-		"41: DCDCen (RW)"
+		"41: DCDCen (RW)",
 		"42:Ilock (RW)",
 		"43:RstCnt (RW)",
 		"44:AMen (RW)",
@@ -122,31 +122,33 @@ Reg0 : function(sig) {
 	this.HV0Ilock  = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.YIlock  = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.XIlock  = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
-	this.Ae.text = "AM: " + this.Ae.options[this.Ae.value];
-	this.W.text = "WARN: " + this.W.options[this.W.value];
-	this.DC.text = "DCDC: " + this.DC.options[this.DC.value];
+	this.am_enable.text = "AM: " + this.am_enable.options[this.am_enable.value];
+	this.WRN_en.text = "WARN: " + this.WRN_en.options[this.WRN_en.value];
+	this.DCDC.text = "DCDC: " + this.DCDC.options[this.DCDc.value];
 	this.HV3_en.text = "HV3: " + this.HV3_en.options[this.HV3_en.value];  
 	this.HV2_en.text = "HV2: " + this.HV2_en.options[this.HV2_en.value];  
 	this.HV1_en.text = "HV1: " + this.HV1_en.options[this.HV1_en.value];  
 	this.HV0_en.text = "HV0: " + this.HV0_en.options[this.HV0_en.value];  
-	this.Hy2_en.text = "Y2 LDO: " + this.Hy2_en.options[this.Hy2_en.value];  
-	this.Hy1_en.text = "Y1 LDO: " + this.Hy1_en.options[this.Hy1_en.value];  
-	this.Hy0_en.text = "Y0 LDO: " + this.Hy0_en.options[this.Hy0_en.value];  
-	this.Hx2_en.text = "X2 LDO: " + this.Hx2_en.options[this.Hx2_en.value];  
-	this.Hx1_en.text = "X1 LDO: " + this.Hx1_en.options[this.Hx1_en.value];  
-	this.Hx0_en.text = "X0 LDO: " + this.Hx0_en.options[this.Hx0_en.value];  
-	this.I.text = "GPI: " + this.I.options[this.I.value];
-	this.PG.text = "Power Good: " + this.PG.options[this.PG.value];
-	this.warnIlock.text = "WARN: " + this.warnIlock.options[this.warnIlock.value];
+	this.LDOy2en_en.text = "Y2 LDO: " + this.LDOy2en_en.options[this.LDOy2en_en.value];  
+	this.LDOy1en_en.text = "Y1 LDO: " + this.LDOy1en_en.options[this.LDOy1en_en.value];  
+	this.LDOy0en_en.text = "Y0 LDO: " + this.LDOy0en_en.options[this.LDOy0en_en.value];  
+	this.LDOx2en_en.text = "X2 LDO: " + this.LDOx2en_en.options[this.LDOx2en_en.value];  
+	this.LDOx1en_en.text = "X1 LDO: " + this.LDOx1en_en.options[this.LDOx1en_en.value];  
+	this.LDOx0en_en.text = "X0 LDO: " + this.LDOx0en_en.options[this.LDOx0en_en.value];  
+	this.GPI.text = "GPI: " + this.GPI.options[this.GPI.value];
+	this.PGOOD.text = "Power Good: " + this.PGOOD.options[this.PGOOD.value];
+	this.wRNIlock.text = "WARN: " + this.warnIlock.options[this.warnIlock.value];
 	this.DCDCIlock.text = "DCDC: " + this.DCDCIlock.options[this.DCDCIlock.value];
 	this.HV2Ilock.text = "HV2: " + this.HV2Ilock.options[this.HV2Ilock.value];
 	this.HV0Ilock.text = "HV0: " + this.HV0Ilock.options[this.HV0Ilock.value];
-	this.YldoIlock.text = "Y LDO: " + this.YldoIlock.options[this.YldoIlock.value];
-	this.XldoIlock.text = "X LDO: " + this.XldoIlock.options[this.XldoIlock.value];
+	this.YIlock.text = "Y LDO: " + this.YldoIlock.options[this.YldoIlock.value];
+	this.XIlock.text = "X LDO: " + this.XldoIlock.options[this.XldoIlock.value];
 },
 Reg1 : function(sig) {
+	this.unused1 = {value:(sig>>30)&3,type:'unused'};
 	this.HybYldo_lat_synth_flags = {value:(sig>>28)&3,type:'binput',n:16};
 	this.HybYldo_lat_flags = {value:(sig>>16)&0xfff,type:'binput',n:16};
+	this.unused2 = {value:(sig>>14)&3,type:'unused'};
 	this.HybXldo_lat_synth_flags = {value:(sig>>12)&3,type:'binput',n:16};
 	this.HybYldo_lat_flags = {value:sig&0xfff,type:'binput',n:16};
 	this.HybYldo_lat_synth_flags.text = "Hybrid Y LP Synthetic Flags: " + bin_string(this.HybYldo_lat_synth_flags.value,16);
@@ -155,109 +157,88 @@ Reg1 : function(sig) {
 	this.HybXldo_lat_flags.text = "Hybrid X LP Threshold Flags: " + bin_string(this.HybXldo_lat_flags.value,16);
 },
 Reg2 : function(sig) {
-	this.hy_hi_flags = {value:(sig>>16)&0xffff,type:'binput',n:16};
-	this.hy_lo_flags = {value:sig&0xffff,type:'binput',n:16};
-	this.hy_hi_flags.text = "Hy Hi Flags Ch 15-0: " + bin_string(this.hy_hi_flags.value,16);
-	this.hy_lo_flags.text = "Hy Lo Flags Ch 15-0: " + bin_string(this.hy_lo_flags.value,16);
+	this.unused1 = {value:(sig>>30)&3,type:'unused'};
+	this.HV2_lat_synth_flags = {value:(sig>>28)&3,type:'binput',n:16};
+	this.HV2_lat_flags = {value:(sig>>16)&0xfff,type:'binput',n:16};
+	this.unused2 = {value:(sig>>14)&3,type:'unused'};
+	this.HV0_lat_synth_flags = {value:(sig>>12)&3,type:'binput',n:16};
+	this.HV0_lat_flags = {value:sig&0xfff,type:'binput',n:16};
+	this.HV2_lat_synth_flags.text = "HV2,3 Synthetic Flags: " + bin_string(this.HV2_lat_synth_flags.value,16);
+	this.HV2_lat_flags.text = "HV2,3 Threshold Flags: " + bin_string(this.HV2_lat_flags.value,16);
+	this.HV0_lat_synth_flags.text = "HV0,1 Synthetic Flags: " + bin_string(this.HV0_lat_synth_flags.value,16);
+	this.HV0_lat_flags.text = "HV0,1 Threshold Flags: " + bin_string(this.HV0_lat_flags.value,16);
 },
 Reg3 : function(sig) {
-	this.hv0_hi_flags = {value:(sig>>16)&0xffff,type:'binput',n:16};
-	this.hv0_lo_flags = {value:sig&0xffff,type:'binput',n:16};
-	this.hv0_hi_flags.text = "HV0 Hi Flags Ch 15-0: " + bin_string(this.hv0_hi_flags.value,16);
-	this.hv0_lo_flags.text = "HV0 Lo Flags Ch 15-0: " + bin_string(this.hv0_lo_flags.value,16);
-},
-Reg4 : function(sig) {
-	this.hv2_hi_flags = {value:(sig>>16)&0xffff,type:'binput',n:16};
-	this.hv2_lo_flags = {value:sig&0xffff,type:'binput',n:16};
-	this.hv2_hi_flags.text = "HV2 Hi Flags Ch 15-0: " + bin_string(this.hv2_hi_flags.value,16);
-	this.hv2_lo_flags.text = "HV2 Lo Flags Ch 15-0: " + bin_string(this.hv2_lo_flags.value,16);
-},
-Reg5 : function(sig) {
-	this.dcdc_hi_flags = {value:(sig>>16)&0xffff,type:'binput',n:16};
-	this.dcdc_lo_flags = {value:sig&0xffff,type:'binput',n:16};
-	this.dcdc_hi_flags.text = "DCDC Hi Flags Ch 15-0: " + bin_string(this.dcdc_hi_flags.value,16);
-	this.dcdc_lo_flags.text = "DCDC Lo Flags Ch 15-0: " + bin_string(this.dcdc_lo_flags.value,16);
-},
-Reg6 : function(sig) {
-	this.warn_hi_flags = {value:(sig>>16)&0xffff,type:'binput',n:16};
-	this.warn_lo_flags = {value:sig&0xffff,type:'binput',n:16};
-	this.warn_hi_flags.text = "WARN Hi Flags Ch 15-0: " + bin_string(this.warn_hi_flags.value,16);
-	this.warn_lo_flags.text = "WARN Lo Flags Ch 15-0: " + bin_string(this.warn_lo_flags.value,16);
-},
-Reg7 : function(sig) {
-	this.unused1 = {value:(sig>>22)&0x3ff,type:'unused'};
-	this.WRN = {value:(sig>>20)&3,type:'binput',n:2};
-	this.unused2 = {value:(sig>>18)&3,type:'unused'};
-	this.DCDC = {value:(sig>>16)&3,type:'binput',n:2};
-	this.unused3 = {value:(sig>>14)&3,type:'unused'};
-	this.HV2 = {value:(sig>>12)&3,type:'binput',n:2};
-	this.unused4 = {value:(sig>>10)&3,type:'unused'};
-	this.HV0 = {value:(sig>>8)&3,type:'binput',n:2};
-	this.unused5 = {value:(sig>>6)&3,type:'unused'};
-	this.HY = {value:(sig>>4)&3,type:'binput',n:2};
-	this.unused6 = {value:(sig>>2)&3,type:'unused'};
-	this.HX = {value:sig&3,type:'binput',n:2};
-	this.WRN.text = "WARN Synthetic Flags: " + bin_string(this.WRN.value,2);
-	this.DCDC.text = "WARN Synthetic Flags: " + bin_string(this.DCDC.value,2);
-	this.HV2.text = "WARN Synthetic Flags: " + bin_string(this.HV2.value,2);
-	this.HV0.text = "WARN Synthetic Flags: " + bin_string(this.HV0.value,2);
-	this.HY.text = "WARN Synthetic Flags: " + bin_string(this.HY.value,2);
-	this.HX.text = "WARN Synthetic Flags: " + bin_string(this.HX.value,2);
+	this.unused1 = {value:(sig>>30)&3,type:'unused'};
+	this.WRN_lat_synth_flags = {value:(sig>>28)&3,type:'binput',n:16};
+	this.WRN_lat_flags = {value:(sig>>16)&0xfff,type:'binput',n:16};
+	this.unused2 = {value:(sig>>14)&3,type:'unused'};
+	this.DCDC_lat_synth_flags = {value:(sig>>12)&3,type:'binput',n:16};
+	this.DCDC_lat_flags = {value:sig&0xfff,type:'binput',n:16};
+	this.WRN_lat_synth_flags.text = "WRN Synthetic Flags: " + bin_string(this.WRN_lat_synth_flags.value,16);
+	this.WRN_lat_flags.text = "WRN Threshold Flags: " + bin_string(this.WRN_lat_flags.value,16);
+	this.DCDC_lat_synth_flags.text = "DCDC Synthetic Flags: " + bin_string(this.DCDC_lat_synth_flags.value,16);
+	this.DCDC_lat_flags.text = "DCDC Threshold Flags: " + bin_string(this.DCDC_lat_flags.value,16);
 },
 Reg10 : function(sig) {
-	this.Ae = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.am_enable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.unused = {value:(sig>>30)&1,type:'unused'};
-	this.ch2 = {value:(sig>>20)&0x3ff,type:'input'};
-	this.ch1 = {value:(sig>>10)&0x3ff,type:'input'};
-	this.ch0 = {value:sig&0x3ff,type:'input'};
-	this.Ae.text = "AM: " + this.Ae.options[this.Ae.value];
-	this.ch2.text = "CH2 Value: " + this.ch2.value;
-	this.ch1.text = "CH1 Value: " + this.ch1.value;
-	this.ch0.text = "CH0 Value: " + this.ch0.value;
+	this.Val2 = {value:(sig>>20)&0x3ff,type:'input'};
+	this.Val1 = {value:(sig>>10)&0x3ff,type:'input'};
+	this.Val0 = {value:sig&0x3ff,type:'input'};
+	this.am_enable.text = "AM: " + this.am_enable.options[this.am_enable.value];
+	this.Val2.text = "CH2 Value: " + this.Val2.value;
+	this.Val1.text = "CH1 Value: " + this.Val1.value;
+	this.Val0.text = "CH0 Value: " + this.Val0.value;
 },
 Reg11 : function(sig) {
-	this.Ae = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.am_enable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.unused = {value:(sig>>30)&1,type:'unused'};
-	this.ch5 = {value:(sig>>20)&0x3ff,type:'input'};
-	this.ch4 = {value:(sig>>10)&0x3ff,type:'input'};
-	this.ch3 = {value:sig&0x3ff,type:'input'};
-	this.Ae.text = "AM: " + this.Ae.options[this.Ae.value];
-	this.ch5.text = "CH5 Value: " + this.ch5.value;
-	this.ch4.text = "CH4 Value: " + this.ch4.value;
-	this.ch3.text = "CH3 Value: " + this.ch3.value;
+	this.Val5 = {value:(sig>>20)&0x3ff,type:'input'};
+	this.Val4 = {value:(sig>>10)&0x3ff,type:'input'};
+	this.Val3 = {value:sig&0x3ff,type:'input'};
+	this.am_enable.text = "AM: " + this.am_enable.options[this.am_enable.value];
+	this.Val5.text = "CH5 Value: " + this.Val5.value;
+	this.Val4.text = "CH4 Value: " + this.Val4.value;
+	this.Val3.text = "CH3 Value: " + this.Val3.value;
 },
 Reg12 : function(sig) {
-	this.Ae = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.am_enable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.unused = {value:(sig>>30)&1,type:'unused'};
-	this.ch8 = {value:(sig>>20)&0x3ff,type:'input'};
-	this.ch7 = {value:(sig>>10)&0x3ff,type:'input'};
-	this.ch6 = {value:sig&0x3ff,type:'input'};
-	this.Ae.text = "AM: " + this.Ae.options[this.Ae.value];
-	this.ch8.text = "CH8 Value: " + this.ch8.value;
-	this.ch7.text = "CH7 Value: " + this.ch7.value;
-	this.ch6.text = "CH6 Value: " + this.ch6.value;
+	this.Val8 = {value:(sig>>20)&0x3ff,type:'input'};
+	this.Val7 = {value:(sig>>10)&0x3ff,type:'input'};
+	this.Val6 = {value:sig&0x3ff,type:'input'};
+	this.am_enable.text = "AM: " + this.am_enable.options[this.am_enable.value];
+	this.Val8.text = "CH8 Value: " + this.Val8.value;
+	this.Val7.text = "CH7 Value: " + this.Val7.value;
+	this.Val6.text = "CH6 Value: " + this.Val6.value;
 },
 Reg13 : function(sig) {
-	this.Ae = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.am_enable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.unused = {value:(sig>>30)&1,type:'unused'};
-	this.ch11 = {value:(sig>>20)&0x3ff,type:'input'};
-	this.ch10 = {value:(sig>>10)&0x3ff,type:'input'};
-	this.ch9 = {value:sig&0x3ff,type:'input'};
-	this.Ae.text = "AM: " + this.Ae.options[this.Ae.value];
-	this.ch11.text = "CH11 Value: " + this.ch11.value;
-	this.ch10.text = "CH10 Value: " + this.ch10.value;
-	this.ch9.text = "CH9 Value: " + this.ch9.value;
+	this.Val11 = {value:(sig>>20)&0x3ff,type:'input'};
+	this.Val10 = {value:(sig>>10)&0x3ff,type:'input'};
+	this.Val9 = {value:sig&0x3ff,type:'input'};
+	this.am_enable.text = "AM: " + this.am_enable.options[this.am_enable.value];
+	this.Val11.text = "CH11 Value: " + this.Val11.value;
+	this.Val10.text = "CH10 Value: " + this.Val10.value;
+	this.Val9.text = "CH9 Value: " + this.Val9.value;
 },
 Reg14 : function(sig) {
-	this.Ae = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-	this.unused = {value:(sig>>30)&1,type:'unused'};
-	this.ch14 = {value:(sig>>20)&0x3ff,type:'input'};
-	this.ch13 = {value:(sig>>10)&0x3ff,type:'input'};
-	this.ch12 = {value:sig&0x3ff,type:'input'};
-	this.Ae.text = "AM: " + this.Ae.options[this.Ae.value];
-	this.ch14.text = "CH14 Value: " + this.ch14.value;
-	this.ch13.text = "CH13 Value: " + this.ch13.value;
-	this.ch12.text = "CH12 Value: " + this.ch12.value;
+	this.am_enable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.Ch13_set = {value:(sig>>28)&7,type:'select', options:{100:'13E',011:'13D',010:'13C',001:'13B',000:'13A',101:'13A',111:'13A',110:'13A'}};
+	this.unused1 = {value:(sig>>27)&1,type:'unused'};
+	this.Ch12A_set = {value:(sig>>26)&1,type:'select', options:{0:'VDDLR voltage (low side of sense resistor)', 1:'VDDLR voltage (high side of sense resistor)'}};
+	this.Ch12_set = {value:(sig>>24)&3,type:'select', options:{11:'12A', 10:'12C', 01:'12B', 00:'12A'}};
+	this.unused2 = {value:(sig>>20)&0xf,type:'unused'};
+	this.Val13 = {value:(sig>>10)&0x3ff,type:'input'};
+	this.Val12 = {value:sig&0x3ff,type:'input'};
+	this.am_enable.text = "AM: " +this.am_enable.options[this.am_enable.value];
+	this.Ch13_set.text = "Channel 13 MUX setting: " +this.Ch13_set.options[this.Ch13_set.value];
+	this.Ch12A_set.text = "Channel 12A MUX setting: " + this.Ch12A_set.options[this.Ch12A_set.value];
+	this.Ch12_set.text = "Channel 12 MUX setting: " + this.Ch12_set.options[this.Ch12_set.value];
+	this.Val13.text = "Ch13 Value: " + this.Val14.value;
+	this.Val12.text = "Ch12 Value: " +this.Val12.value;
 },
 Reg15 : function(sig) {
 	this.Ae = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
