@@ -472,8 +472,8 @@ Reg42 : function(sig) {
 	this.trigger_mode.text = "Trigger Mode: " + this.trigger_mode.options[this.trigger_mode.value];
 },
 Reg43 : function(sig) {
-	this.clk_disable_sel = {value:(sig>>28)&0x1f,type:'input'};
-    this.clk_disable = {value:(sig>>24)&0x1f,type:'input'};
+	this.clk_disable_sel = {value:(sig>>28)&0x1f,type:'select', options:{00:'40 MHz', 01:'Stave_clk (160MHz)', 10: 'clk160', 11: 'clk640'}};
+    this.clk_disable = {value:(sig>>24)&0x1f,type:'select', options:{01:'A', 10: 'B', 11: 'C'}};
 	this.efuse_prog_bit = {value:(sig>>16)&0x1f,type:'binput',n:5};
 	this.GPO1 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.GPO0 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}};
