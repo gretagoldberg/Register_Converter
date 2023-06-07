@@ -83,8 +83,8 @@ var Registers = {
 
 Reg0 : function(sig) {
 	this.HPR_State_SEU = {value:(sig>>31)&1,type:'binput',n:1};
-	this.HPR_Counter_SEU = {value:(sig>>30),type:'binput',n:1};
-    this.NC = {value:(sig>>16)&0x1f,type:'unused'};
+	this.HPR_Counter_SEU = {value:(sig>>30)&1,type:'binput',n:1};
+    this.NC = {value:(sig>>16)&0x3fff,type:'unused'};
     this.Reg_48_SEU = {value:(sig>>15)&1,type:'binput',n:1};
 	this.Reg_47_SEU = {value:(sig>>14)&1,type:'binput',n:1};
 	this.Reg_46_SEU = {value:(sig>>13)&1,type:'binput',n:1};
@@ -181,18 +181,18 @@ Reg4 : function(sig) {
 	this.R3L1_errcount.text = "R3L1 error count: " + this.R3L1_errcount.value;
 },
 Reg5 : function(sig) {
-    this.unused1 = {value:(sig>>19)&0x3f, type:'unused'};
-    this.ana_set = {value:(sig>>16)&0x3f, type:'input'};
-	this.unused2 = {value:(sig>>10)&0x3fffff,type:'unused'};
-	this.ADCval = {value:(sig>>9)&0x3ff,type:'input'};
+    this.unused1 = {value:(sig>>19)&0x1fff, type:'unused'};
+    this.ana_set = {value:(sig>>16)&7, type:'input'};
+	this.unused2 = {value:(sig>>10)&0x3f,type:'unused'};
+	this.ADCval = {value:(sig>>0)&0x3ff,type:'input'};
 	this.ADCval.text = "Measured ADC value: " + this.ADCval.value;
     this.ana_set.text = "Analog MUX setting:" +this.ana_set.value;
 },
 Reg6 : function(sig) {
-    this.unused1 = {value:(sig>>8)&0x3fff, type:'unused'};
-    this.unused2 = {value:(sig>>5)&0x3f, type:'unused'};
-    this.prlp_sending = {value:(sig>>4), type:'select', options:{0:'disabled', 1:'enabled'}};
-	this.unused3 = {value:(sig>>2)&0x3fffffff,type:'unused'};
+    this.unused1 = {value:(sig>>8)&0xffffff, type:'unused'};
+    this.unused2 = {value:(sig>>5)&7, type:'unused'};
+    this.prlp_sending = {value:(sig>>4)&1, type:'select', options:{0:'disabled', 1:'enabled'}};
+	this.unused3 = {value:(sig>>2)&3,type:'unused'};
 	this.GPI1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.GPI0 = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
     this.prlp_sending.text = "Sending PRLP commands to ABCs: " + this.prlp_sending.options[this.prlp_sending.value];
@@ -200,27 +200,27 @@ Reg6 : function(sig) {
 	this.GPI0.text = "Status of GPI0 pad: " + this.GPI0.options[this.GPI0.value];
 },
 Reg7 : function(sig) {
-    this.ICsramOCC_ch_10 = {value:(sig>>28)&0x3f, type:'input'};
-    this.unused = {value:(sig>>11)&0x3ff, type:'unused'};
-    this.LP_IC_Full = {value:(sig>>0)&0x3ff, type:'input'};
+    this.ICsramOCC_ch_10 = {value:(sig>>28)&0xf, type:'input'};
+    this.unused = {value:(sig>>11)&0x1ffff, type:'unused'};
+    this.LP_IC_Full = {value:(sig>>0)&0x7ff, type:'input'};
     this.ICsramOCC_ch_10.text = "IC 10 LP Buffer Occupancy: " +this.ICsramOCC_ch_10.value;
     this.LP_IC_Full.text = "IC full flags: " + this.LP_IC_Full.value;
 },
 Reg8 : function(sig) {
-    this.ICsramOCC_ch_9 = {value:(sig>>28)&0x3f, type:'input'};
-    this.ICsramOCC_ch_8 = {value:(sig>>24)&0x3f, type:'input'};
-    this.unused = {value:(sig>>22)&0x3f, type:'unused'};
-    this.IC_ABCoutstanding_Ch_10 = {value:(sig>>20)&0x3f, type:'input'};
-    this.IC_ABCoutstanding_Ch_9 = {value:(sig>>18)&0x3f, type:'input'};
-    this.IC_ABCoutstanding_Ch_8 = {value:(sig>>16)&0x3f, type:'input'};
-    this.IC_ABCoutstanding_Ch_7 = {value:(sig>>14)&0x3f, type:'input'};
-    this.IC_ABCoutstanding_Ch_6 = {value:(sig>>12)&0x3f, type:'input'};
-    this.IC_ABCoutstanding_Ch_5 = {value:(sig>>10)&0x3f, type:'input'};
-    this.IC_ABCoutstanding_Ch_4 = {value:(sig>>8)&0x3f, type:'input'};
-    this.IC_ABCoutstanding_Ch_3 = {value:(sig>>6)&0x3f, type:'input'};
-    this.IC_ABCoutstanding_Ch_2 = {value:(sig>>4)&0x3f, type:'input'};
-    this.IC_ABCoutstanding_Ch_1 = {value:(sig>>2)&0x3f, type:'input'};
-    this.IC_ABCoutstanding_Ch_0 = {value:(sig>>0)&0x3f, type:'input'};
+    this.ICsramOCC_ch_9 = {value:(sig>>28)&0xf, type:'input'};
+    this.ICsramOCC_ch_8 = {value:(sig>>24)&0xf, type:'input'};
+    this.unused = {value:(sig>>22)&3, type:'unused'};
+    this.IC_ABCoutstanding_Ch_10 = {value:(sig>>20)&3, type:'input'};
+    this.IC_ABCoutstanding_Ch_9 = {value:(sig>>18)&3, type:'input'};
+    this.IC_ABCoutstanding_Ch_8 = {value:(sig>>16)&3, type:'input'};
+    this.IC_ABCoutstanding_Ch_7 = {value:(sig>>14)&3, type:'input'};
+    this.IC_ABCoutstanding_Ch_6 = {value:(sig>>12)&3, type:'input'};
+    this.IC_ABCoutstanding_Ch_5 = {value:(sig>>10)&3, type:'input'};
+    this.IC_ABCoutstanding_Ch_4 = {value:(sig>>8)&3, type:'input'};
+    this.IC_ABCoutstanding_Ch_3 = {value:(sig>>6)&3, type:'input'};
+    this.IC_ABCoutstanding_Ch_2 = {value:(sig>>4)&3, type:'input'};
+    this.IC_ABCoutstanding_Ch_1 = {value:(sig>>2)&3, type:'input'};
+    this.IC_ABCoutstanding_Ch_0 = {value:(sig>>0)&3, type:'input'};
     this.ICsramOCC_ch_9.text = "IC 9 LP Buffer Occupancy: " +this.ICsramOCC_ch_9.value;
     this.ICsramOCC_ch_8.text = "IC 8 LP Buffer Occupancy: " +this.ICsramOCC_ch_8.value;
     this.IC_ABCoutstanding_Ch_10.text = "IC 10 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_10.value;
@@ -236,14 +236,14 @@ Reg8 : function(sig) {
     this.IC_ABCoutstanding_Ch_0.text = "IC 0 Number of outstanding readout requests: " +this.IC_ABCoutstanding_Ch_0.value;
 },
 Reg9 : function(sig) {
-    this.ICsramOCC_ch_7 = {value:(sig>>28)&0x3f, type:'input'};
-    this.ICsramOCC_ch_6 = {value:(sig>>24)&0x3f, type:'input'};
-    this.ICsramOCC_ch_5 = {value:(sig>>20)&0x3f, type:'input'};
-    this.ICsramOCC_ch_4 = {value:(sig>>16)&0x3f, type:'input'};
-    this.ICsramOCC_ch_3 = {value:(sig>>12)&0x3f, type:'input'};
-    this.ICsramOCC_ch_2 = {value:(sig>>8)&0x3f, type:'input'};
-    this.ICsramOCC_ch_1 = {value:(sig>>4)&0x3f, type:'input'};
-    this.ICsramOCC_ch_0 = {value:(sig>>0)&0x3f, type:'input'};
+    this.ICsramOCC_ch_7 = {value:(sig>>28)&0xf, type:'input'};
+    this.ICsramOCC_ch_6 = {value:(sig>>24)&0xf, type:'input'};
+    this.ICsramOCC_ch_5 = {value:(sig>>20)&0xf, type:'input'};
+    this.ICsramOCC_ch_4 = {value:(sig>>16)&0xf, type:'input'};
+    this.ICsramOCC_ch_3 = {value:(sig>>12)&0xf, type:'input'};
+    this.ICsramOCC_ch_2 = {value:(sig>>8)&0xf, type:'input'};
+    this.ICsramOCC_ch_1 = {value:(sig>>4)&0xf, type:'input'};
+    this.ICsramOCC_ch_0 = {value:(sig>>0)&0xf, type:'input'};
     this.ICsramOCC_ch_7.text = "IC 7 LP Buffer Occupancy: " +this.ICsramOCC_ch_7.value;
     this.ICsramOCC_ch_6.text = "IC 6 LP Buffer Occupancy: " +this.ICsramOCC_ch_6.value;
     this.ICsramOCC_ch_5.text = "IC 5 LP Buffer Occupancy: " +this.ICsramOCC_ch_5.value;
@@ -254,16 +254,16 @@ Reg9 : function(sig) {
     this.ICsramOCC_ch_0.text = "IC 0 LP Buffer Occupancy: " +this.ICsramOCC_ch_0.value;
 },
 Reg10 : function(sig) {
-    this.unused1 = {value:(sig>>21)&0x3ff, type:'unused'};
-    this.pr_rr_occ = {value:(sig>>16)&0x3f, type:'input'};
-    this.unused2 = {value:(sig>>8)&0x3f, type:'unused'};
-    this.lp_rr_occ = {value:(sig>>0)&0x3f, type:'input'};
+    this.unused1 = {value:(sig>>21)&0x7ff, type:'unused'};
+    this.pr_rr_occ = {value:(sig>>16)&0x1f, type:'input'};
+    this.unused2 = {value:(sig>>8)&0xff, type:'unused'};
+    this.lp_rr_occ = {value:(sig>>0)&0xff, type:'input'};
     this.pr_rr_occ.text = "PR readout request queue occupancy: " + this.pr_rr_occ.value;
     this.lp_rr_occ.text = "LP readout request queue occupancy: " + this.lp_rr_occ.value;
 },
 Reg15 : function(sig) {
 	this.lcb_frame_raw = {value:(sig>>16)&0xffff,type:'input'};
-	this.lcb_scmd_errcount = {value:(sig>>8)&0x3f, type:'input'};
+	this.lcb_scmd_errcount = {value:(sig>>8)&0xff, type:'input'};
     this.lcb_scmd_err = {value:(sig>>7)&1,type:'checkbox',checked:1,unchecked:0};
 	this.R3L1_errcount_ovfl = {value:(sig>>6)&1,type:'checkbox',checked:1,unchecked:0};
 	this.ePllInstantLock = {value:(sig>>5)&1,type:'checkbox',checked:1,unchecked:0};
@@ -348,10 +348,10 @@ Reg34 : function(sig) {
 	this.fd_di8_fD.text  = "ABC Data In 8 Fine Delay: " + this.fd_di8_fD.value;
 },
 Reg35 : function(sig) {
-	this.unused = {value:(sig>>29)&0xff,type:'unused'};
-    this.ePllPhase160MHz = {value:(sig>>24)&0x3f,type:'checkbox',checked:1,unchecked:0};
-	this.ePllEnablePhase = {value:(sig>>16)&0x3f,type:'binput',n:8};
-	this.ePllReferenceFrequency = {value:(sig>>12)&0x3f,type:'select',options:{1:'40 MHz',2:'80 MHz',3:'160 MHz'}};
+	this.unused = {value:(sig>>29)&7,type:'unused'};
+    this.ePllPhase160MHz = {value:(sig>>24)&0x1f,type:'checkbox',checked:1,unchecked:0};
+	this.ePllEnablePhase = {value:(sig>>16)&0xff,type:'binput',n:8};
+	this.ePllReferenceFrequency = {value:(sig>>12)&3,type:'select',options:{1:'40 MHz',2:'80 MHz',3:'160 MHz'}};
    	this.ePllRes={value:(sig>>8)&0xf,type:'select',options:{0:'0.5 kOhm',1:'1 kOhm',2:'1.5 kOhm',3:'2 kOhm',4:'2.5 kOhm',
             5:'3 kOhm',6:'3.5 kOhm',7:'4 kOhm',8:'4.5 kOhm',9:'5 kOhm',10: '5.5 kOhm',11:'6 KOhm',12:'6.5 kOhm'
 		,13:'7 kOhm',14:'7.5 kOhm',15:'8 kOhm'}}; 
@@ -367,7 +367,7 @@ Reg35 : function(sig) {
 	this.ePllIcp.text = "ePLL Charge Pump Current: " + this.Icp.options[this.Icp.value];
 },
 Reg38 : function(sig) {
-	this.unused = {value:(sig>>28)&0xf,type:'unused'};
+	this.unused = {value:(sig>>28)&7,type:'unused'};
 	this.rclk_hyb_en = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.rclk_hyb_cur = {value:(sig>>24)&7,type:'input'};
 	this.prlp_hyb_en = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}};
@@ -424,7 +424,7 @@ Reg40 : function(sig) {
 	this.IC_enable.text = "Input channel enables: " + bin_string(this.IC_enable.value,11);
 },
 Reg41 : function(sig) {
-	this.unused1 = {value:(sig>>21)&0x1fff,type:'unused'};
+	this.unused1 = {value:(sig>>21)&0x7ff,type:'unused'};
     this.clk_disable_en = {value:(sig>>20)&1,type:'checkbox',checked:1,unchecked:0};
     this.unused2 = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
 	this.prbs_mode = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
@@ -432,11 +432,11 @@ Reg41 : function(sig) {
 	this.encode_cntl = {value:(sig>>16)&1,type:'select',options:{0:'Use pad',1:'Use register to control output encoding'}};
 	this.unused3 = {value:(sig>>15)&1,type:'unused'};
 	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0:'16',1:'1',2:'2',3:'4',4:'8'}};
-	this.unused4 = {value:(sig>>10)&0x3f,type:'unused'};
+	this.unused4 = {value:(sig>>10)&3,type:'unused'};
 	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0:'Physics',1:'RegRead',2:'PackTrans',3:'FullTrans'}};
-	this.unused5 = {value:(sig>>5)&0x3f,type:'unused'};
+	this.unused5 = {value:(sig>>5)&7,type:'unused'};
 	this.readout_speed = {value:(sig>>4)&1,type:'select',options:{0:'320 MHz',1:'640 MHz'}};
-	this.unused6 = {value:(sig>>1)&0x3f,type:'unused'};
+	this.unused6 = {value:(sig>>1)&7,type:'unused'};
 	this.trigger_mode= {value:sig&1,type:'select',options:{0:'Multilevel trigger',1:'Single level trigger'}};
     this.clk_disable_en.text = "Clock Phase Disabled: " + ((this.clk_disable_en.value==this.clk_disable_en.checked)?'Yes':'No');
 	this.prbs_mode.text = "PRBS Mode: " + ((this.prbs_mode.value==this.prbs_mode.checked)?'Yes':'No');
@@ -448,7 +448,7 @@ Reg41 : function(sig) {
 	this.trigger_mode.text = "Trigger Mode: " + this.trigger_mode.options[this.trigger_mode.value];
 },
 Reg42 : function(sig) {
-	this.unused1 = {value:(sig>>21)&0x1fff,type:'unused'};
+	this.unused1 = {value:(sig>>21)&0x7ff,type:'unused'};
     this.clk_disable_en = {value:(sig>>20)&1,type:'checkbox',checked:1,unchecked:0};
     this.unused2 = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
 	this.prbs_mode = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
@@ -456,11 +456,11 @@ Reg42 : function(sig) {
 	this.encode_cntl = {value:(sig>>16)&1,type:'select',options:{0:'Use pad',1:'Use register to control output encoding'}};
 	this.unused3 = {value:(sig>>15)&1,type:'unused'};
 	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0:'16',1:'1',2:'2',3:'4',4:'8'}};
-	this.unused4 = {value:(sig>>10)&0x3f,type:'unused'};
+	this.unused4 = {value:(sig>>10)&3,type:'unused'};
 	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0:'Physics',1:'RegRead',2:'PackTrans',3:'FullTrans'}};
-	this.unused5 = {value:(sig>>5)&0x3f,type:'unused'};
+	this.unused5 = {value:(sig>>5)&7,type:'unused'};
 	this.readout_speed = {value:(sig>>4)&1,type:'select',options:{0:'320 MHz',1:'640 MHz'}};
-	this.unused6 = {value:(sig>>1)&0x3f,type:'unused'};
+	this.unused6 = {value:(sig>>1)&7,type:'unused'};
 	this.trigger_mode= {value:sig&1,type:'select',options:{0:'Multilevel trigger',1:'Single level trigger'}};
     this.clk_disable_en.text = "Clock Phase Disabled: " + ((this.clk_disable_en.value==this.clk_disable_en.checked)?'Yes':'No');
 	this.prbs_mode.text = "PRBS Mode: " + ((this.prbs_mode.value==this.prbs_mode.checked)?'Yes':'No');
@@ -472,8 +472,8 @@ Reg42 : function(sig) {
 	this.trigger_mode.text = "Trigger Mode: " + this.trigger_mode.options[this.trigger_mode.value];
 },
 Reg43 : function(sig) {
-	this.clk_disable_sel = {value:(sig>>28)&0x3f,type:'input'};
-    this.clk_disable = {value:(sig>>24)&0x3f,type:'input'};
+	this.clk_disable_sel = {value:(sig>>28)&0x1f,type:'input'};
+    this.clk_disable = {value:(sig>>24)&0x1f,type:'input'};
 	this.efuse_prog_bit = {value:(sig>>16)&0x1f,type:'binput',n:5};
 	this.GPO1 = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.GPO0 = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}};
@@ -520,7 +520,7 @@ Reg48 : function(sig) {
 	this.therm_offset = {value:(sig>>20)&0xf,type:'select',options:{0: '0 mV',1:'16 mV',2:'30 mV',3:'46 mV',4:'79 mV',5:'95 mV', 6:'109 mV',7:'125 mV',8:'146 mV',9:'162 mV',10:'176 mV',11:'192 mV',12:'215 mV',13:'231 mV',14:'245 mV',15:'261 mV'}};
 	this.ana_set = {value:(sig>>16)&7,type:'select',options:{0:'Bandgap voltage',1:'Internal temperature',2:'Calibration input',3:'VDD_RAW',4:'VDD_REG',5:'Hybrid ground'}};
 	this.am_range = {value:(sig>>12)&1,type:'input'};
-    this.am_IntSlope = {value:(sig>>8)&0x3f,type:'input'};
+    this.am_IntSlope = {value:(sig>>8)&0xf,type:'input'};
 	this.am_calib = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
 	this.am_enable = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.therm_offset.text = "Output offset for temperature sensor: " + this.therm_offset.options[this.therm_offset.value];
