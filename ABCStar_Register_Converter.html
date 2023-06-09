@@ -1,3 +1,4 @@
+
 <html>
 <head>
 <meta charset="utf-8"/>
@@ -31,10 +32,10 @@ urchinTracker();
 //Default signals
 var defaults = {
 	Reg0:0,Reg1:0,Reg2:0xff,Reg3:0,Reg4:0x10c,Reg6:0,Reg7:0,Reg16:0,Reg17:0,Reg18:0,Reg19:0,Reg20:0,Reg21:0,Reg22:0,Reg23:0,Reg32:0,Reg33:0x444,Reg34:0xf,Reg35:0,Reg36:0,Reg37:0,Reg38:0xffff,Reg48:0,
-	Reg49:0,Reg50:0,Reg51:0,Reg52:0,Reg63:0,Reg64:0,Reg65:0,Reg66:0,Reg67:0,Reg68:0,Reg69:0,Reg70:0,Reg71:0,Reg72:0,
+	Reg49:0,Reg50:137,Reg51:0,Reg52:0,Reg53:0,Reg63:0,Reg64:0,Reg65:0,Reg66:0,Reg67:0,Reg68:0,Reg69:0,Reg70:0,Reg71:0,Reg72:0,
 	Reg73:0,Reg74:0,Reg75:0,Reg76:0,Reg77:0,Reg78:0,Reg79:0,
 	Reg80:0,Reg81:0,Reg82:0,Reg83:0,Reg84:0,Reg85:0,Reg86:0,Reg87:0,Reg88:0,Reg89:0,Reg90:0,Reg91:0,Reg92:0,Reg93:0,Reg94:0,Reg95:0,
-	Reg96:0,Reg97:0,Reg98:0,Reg99:0,Reg100:0,Reg101:0,Reg102:0,Reg103:0,Reg104:0,Reg105:0,Reg106:0,Reg107:0,Reg108:0,Reg109:0,Reg110:0,		 	Reg111:0,Reg112:0,Reg113:0,Reg114:0,Reg115:0,Reg116:0,Reg117:0,Reg118:0,Reg119:0,Reg120:0,Reg121:0,Reg122:0,Reg123:0,Reg124:0,Reg125:0,Reg126:0,
+	Reg96:0,Reg97:0,Reg98:0,Reg99:0,Reg100:0,Reg101:0,Reg102:0,Reg103:0,Reg104:0,Reg105:0,Reg106:0,Reg107:0,Reg108:0,Reg109:0,Reg110:0,Reg111:0,Reg112:0,Reg113:0,Reg114:0,Reg115:0,Reg116:0,Reg117:0,Reg118:0,Reg119:0,Reg120:0,Reg121:0,Reg122:0,Reg123:0,Reg124:0,Reg125:0,Reg126:0,
 	Reg127:0,Reg128:0,Reg129:0,Reg130:0,Reg131:0,Reg132:0,Reg133:0,Reg134:0,Reg135:0,Reg136:0,Reg137:0,Reg138:0,Reg139:0,Reg140:0,Reg141:0,Reg142:0,
 	Reg143:0,Reg144:0,Reg145:0,Reg146:0,Reg147:0,Reg148:0,Reg149:0,Reg150:0,Reg151:0,Reg152:0,Reg153:0,Reg154:0,Reg155:0,Reg156:0,Reg157:0,Reg158:0,
 	Reg159:0,Reg160:0,Reg161:0,Reg162:0,Reg163:0,Reg164:0,Reg165:0,Reg166:0,Reg167:0,Reg168:0,Reg169:0,Reg170:0,Reg171:0,Reg172:0,Reg173:0,Reg174:0,
@@ -52,7 +53,7 @@ var RegDesc =  ["Register(s):Description",
 		"64-95:TrimDAC 4 LSBs (RW)",
 		"96-103:TrimDac MSBs (RW)",
 		"104-111:Calibration Pulse Enables (RW)",
-		"112-175:Hit Counts (RO)"
+		"112-175:Hit Counts (RO)" 
 		];
 
 window.onload = function() {
@@ -77,95 +78,111 @@ var max_test = 0xffffffff;
 //Namespace of register constructors
 var Registers = {
 	Reg0: function(sig) {
-		this.unused1 = {value:(sig>>6)&0x7ffffff,type:'unused'};
+		this.unused1 = {value:(sig>>7)&0x1ffffff,type:'unused'};
+        this.ADCReset = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.LCBErrCntClr = {value:(sig>>5)&1,type:'checkbox',checked:1,unchecked:0};
 		this.eFuseL = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
 		this.TestHPR = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
 		this.HPRClear = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
 		this.write_disable = {value:(sig>>1)&1,type:'checkbox',checked:1,unchecked:0};
 		this.RRForce = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
-		this.write_disable.text = "Prevent write commands on registers other than 0: " + ((this.write_disable.value==this.write_disable.checked)?'Yes':'No');
-		this.HPRClear.text = "Interrupt periodic transmission of HPR register: " + 
-((this.HPRClear.value==this.HPRClear.checked)?'Yes':'No');	
+		this.ADCReset.text = "Reset the ADC: " + this.ADCReset.options[this.ADCReset.value];
+        this.write_disable.text = "Prevent write commands on registers other than 0: " + ((this.write_disable.value==this.write_disable.checked)?'Yes':'No');
+		this.HPRClear.text = "Interrupt periodic transmission of HPR register: " + ((this.HPRClear.value==this.HPRClear.checked)?'Yes':'No');	
 		this.TestHPR.text = "Transmit pulse acting as LCB_Locked bit false (to test HPR periodic packet transmission): " + ((this.TestHPR.value==this.TestHPR.checked)?'Yes':'No');
 		this.RRForce.text = "Transmit oldest pending 'Read register' packet after current even packet transmission: " + ((this.RRForce.value==this.RRForce.checked)?'Yes':'No');	
 		this.eFuseL.text = "Copy 24 programmed eFuse bits into the eFuse register: " + ((this.eFuseL.value==this.eFuseL.checked)?'Yes':'No');
 		this.LCBErrCntClr.text = "Clear LCB Error Counter: " + ((this.LCBErrCntClr.value==this.LCBErrCntClr.checked)?'Yes':'No');
 	},
 	Reg1: function(sig) {
-		this.unused1 = {value:(sig>>29)&7,type:'unused'};
-		this.btrange = {value:(sig>>24)&0x1f,type:'input'};
-		this.unused2 = {value:(sig>>21)&7,type:'unused'};
-		this.b8bref = {value:(sig>>16)&0x1f,type:'input'};
-		this.unused3 = {value:(sig>>13)&7,type:'unused'};
-		this.biref = {value:(sig>>8)&0x1f,type:'input'};
-		this.unused4 = {value:(sig>>5)&7,type:'unused'};
+        this.DIS_CLKS = {value:(sig>>28)&7,type:'select',options:{1:'clk40A', 2:'clk40B', 3: 'clk40C', 4: 'clk40V', 5: 'clk40ADC', 6: 'clk160A', 7: 'clk160B', 8: 'clk160C' }};
+        this.LCB_SelfResetEnable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.bvt = {value:(sig>>20)&0xff,type:'input'};
+		this.btrange = {value:(sig>>15)&0x1f,type:'input'};
+		this.b8bref = {value:(sig>>10)&0x1f,type:'input'};
+		this.biref = {value:(sig>>5)&0x1f,type:'input'};
 		this.bvref = {value:sig&0x1f,type:'input'};
+        this.DIS_CLKS.text = "Disable one of the 7 clocks: " + this.DIS_CLKS.options[this.DIS_CLKS.value];
+        this.LCB_SelfResetEnable.text = "Reset the LCB decoder: " + this.LCB_SelfResetEnable.options[this.LCB_SelfResetEnable.value];
+        this.bvt.text = "Discriminator voltage (0V to -590mV, step of 2.3mV): " + (-1.0*this.bvt.value*2.3) + 'mV'; 
 		this.btrange.text = "Bit trim DAC range: " + this.btrange.value;
 		this.b8bref.text = "Internal bias for 8-bit threshold and calibration DACs: " + (this.b8bref.value==13)?'50 mV':(this.b8bref.value);
 		this.biref.text = "Internal bias for bias current generators: " + (this.biref.value==13)?'50 mV':(this.biref.value);
 		this.bvref.text = "Internal bias for VCS,VCD,VCSP,VBASE,VP: " + (this.bvref.value==13)?'50 mV':(this.bvref.value); 
 	},
 	Reg2: function(sig) {
-		this.unused1 = {value:(sig>>29)&7,type:'unused'};
-		this.bipre = {value:(sig>>24)&0x1f,type:'input'};
+        this.ringOscRadMonitoring_enable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.enGlitchFilter_40MADC = {value:(sig>>30)&1, type:'select',options:{0:'disabled',1:'enabled'}};
+        this.enGlitchFilter_40MV = {value:(sig>>29)&1, type:'select',options:{0:'disabled',1:'enabled'}};
+        this.enGlitchFilter_40MC = {value:(sig>>28)&1, type:'select',options:{0:'disabled',1:'enabled'}};
+        this.enGlitchFilter_40MB = {value:(sig>>27)&1, type:'select',options:{0:'disabled',1:'enabled'}};
+        this.enGlitchFilter_40MA = {value:(sig>>26)&1, type:'select',options:{0:'disabled',1:'enabled'}};
+        this.IDLEPATTERN = {value:(sig>>22)&0xff,type:'binput',n:4}
+        this.bcal = {value:(sig>>13)&0x1ff,type:'input'};
+        this.combias = {value:(sig>>8)&0x1f,type:'input'};
+        this.str_del = {value:(sig>>2)&0x3f,type:'input'};
+        this.str_del_r = {value:sig&3,type:'select',options:{0:'strobe disabled',1:'delay 0 to 50ns',2:'delay 0 to 60 ns',3:'delay 0 to 80 ns'}};
+		/*
+        this.bipre = {value:(sig>>24)&0x1f,type:'input'};
 		this.unused2 = {value:(sig>>21)&7,type:'unused'};
 		this.bifeed = {value:(sig>>16)&0x1f,type:'input'};
 		this.unused3 = {value:(sig>>13)&7,type:'unused'};
-		this.combias = {value:(sig>>8)&0x1f,type:'input'};
 		this.bvt = {value:sig&0xff,type:'input'};
+        */
+        this.ringOscRadMonitoring_enable.text = "Enable the radiation monitoring ring oscillator circuit: " + this.ringOscRadMonitoring_enable.options[this.ringOscRadMonitoring_enable.value];
+        this.enGlitchFilter_40MADC.text = "Enable glitch filter. Caution: the 40MHz clock phase will change with regards to the 160M inside the chip: " + this.enGlitchFilter_40MADC.options[this.enGlitchFilter_40MADC.value];
+        this.enGlitchFilter_40MV.text = "Enable glitch filter. Caution: the 40MHz clock phase will change with regards to the 160M inside the chip: " + this.enGlitchFilter_40MV.options[this.enGlitchFilter_40MV.value];
+        this.enGlitchFilter_40MC.text = "Enable glitch filter. Caution: the 40MHz clock phase will change with regards to the 160M inside the chip: " + this.enGlitchFilter_40MC.options[this.enGlitchFilter_40MC.value];
+        this.enGlitchFilter_40MB.text = "Enable glitch filter. Caution: the 40MHz clock phase will change with regards to the 160M inside the chip: " + this.enGlitchFilter_40MB.options[this.enGlitchFilter_40MB.value];
+        this.enGlitchFilter_40MA.text = "Enable glitch filter. Caution: the 40MHz clock phase will change with regards to the 160M inside the chip: " + this.enGlitchFilter_40MA.options[this.enGlitchFilter_40MA.value];
+        this.bcal.text = "Calibration DAC voltage (0-150mV, step 0.586 mV): " + this.bcal.value*0.586 + 'mV';
+        this.combias.text = "Comparator bias current (0=5uA,16=9uA,31=13uA): " + (this.combias.value*0.25+5) + 'uA';
+        this.str_del.text = "Calibration strobe delay: " + this.str_del.value;
+        this.str_del_r.text = "Calibration strobe delay range: " + this.str_del_r.options[this.str_del_r.value];
+        this.IDLEPATTERN.text = "Add transitions on the 160Mpbs data output line: " + bin_string(this.IDLEPATTERN.value,4);
+        /*
 		this.bipre.text = "IPRE bias current (0=80uA,16=110uA,31=140uA): " + (this.bipre.value*(30.0/16.0)+80) + ' uA';
 		this.bifeed.text = "IFEED bias current (0=160nA,9=300nA,31=600nA): " + (this.bifeed.value*(140.0/9.0)+160) + 'nA';
-		this.combias.text = "Comparator bias current (0=5uA,16=9uA,31=13uA): " + (this.combias.value*0.25+5) + 'uA';
 		this.bvt.text = "Discriminator voltage (0V to -590mV, step of 2.3mV): " + (-1.0*this.bvt.value*2.3) + 'mV'; 
+        */
 	},
 	Reg3: function(sig) {
-		this.unused1 = {value:(sig>>24)&0xff,type:'unused'};
-		this.bcal = {value:(sig>>16)&0xff,type:'input'};
-		this.unused2 = {value:(sig>>14)&3,type:'unused'};
-		this.str_del = {value:(sig>>8)&0x3f,type:'input'};
-		this.unused3 = {value:(sig>>2)&0x3f,type:'unused'};
-		this.str_del_r = {value:sig&3,type:'select',options:{0:'strobe disabled',1:'delay 0 to 50ns',2:'delay 0 to 60 ns',3:'delay 0 to 80 ns'}};
-		this.bcal.text = "Calibration DAC voltage (0-150mV, step 0.586 mV): " + this.bcal.value*0.586 + 'mV';
-		this.str_del.text = "Calibration strobe delay: " + this.str_del.value;
-		this.str_del_r.text = "Calibration strobe delay range: " + this.str_del_r.options[this.str_del_r.value];
-	},
-	Reg4: function(sig) {
-		this.unused = {value:(sig>>9)&0x7fffff,type:'unused'};
-		this.ADC_en = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.ADC_ch3 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.EN_out_decoder = {value:(sig>>28)&0xf,type:'binput',n:16};
+        this.d_en_ctrl = {value:(sig>>27)&1,type:'select',options:{0:'maximum voltage',1:'enable tuning'}};
+        this.D_LOW = {value:(sig>>26)&1,type:'checkbox',checked:1,unchecked:0};
+        this.d_s = {value:(sig>>21)&0x1f,type:'input'};
+        this.a_en_ctrl = {value:(sig>>20)&1,type:'select',options:{0:'maximum voltage',1:'enable tuning'}};
+        this.A_LOW = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0}
+        this.a_s = {value:(sig>>14)&0x1f,type:'input'};
+        this.btmux_d = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.btmux = {value:(sig>>9)&0xf,type:'input'};
+        this.ADC_en = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.ADC_ch3 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch2 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch1 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch0 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.ADC_bias = {value:sig&0xf,type:'input'};
-		this.ADC_en.text = "ADC operation: " + this.ADC_en.options[this.ADC_en.value];
-		this.ADC_ch3.text = "ADC Ch 3: " + this.ADC_ch3.options[this.ADC_ch3.value];
+        this.ADC_bias = {value:sig&0xf,type:'input'};
+        this.EN_out_decoder = "Configures the flagBit in the 68-bit packets: " + bin_string(this.EN_out_decoder.value,16);
+        this.d_en_ctrl.text = "Regulator D output control: " + this.d_en_ctrl.options[this.d_en_ctrl.value];
+        this.D_LOW = "Lower the output voltage of the analog LDO" + ((this.D_LOW.value==this.D_LOW.checked)?'Yes':'No');
+        this.d_s.text = "Regulator D output voltage: " + this.d_s.value;
+        this.a_en_ctrl.text = "Regulator A output control: " + this.a_en_ctrl.options[this.a_en_ctrl.value];
+        this.A_LOW = "Lower the output voltage of the analog LDO" + ((this.A_LOW.value==this.A_LOW.checked)?'Yes':'No');
+        this.a_s.text = "Regulator A output voltage: " + this.a_s.value;
+        this.btmux_d.text = "MUX output: " + this.btmux_d.options[this.btmux_d.value];
+		this.btmux.text = "MUX output voltage: " + this.btmux.value;
+        this.ADC_en.text = "ADC operation: " + this.ADC_en.options[this.ADC_en.value];
+        this.ADC_ch3.text = "ADC Ch 3: " + this.ADC_ch3.options[this.ADC_ch3.value];
 		this.ADC_ch2.text = "ADC Ch 2: " + this.ADC_ch2.options[this.ADC_ch2.value];
 		this.ADC_ch1.text = "ADC Ch 1: " + this.ADC_ch1.options[this.ADC_ch1.value];
 		this.ADC_ch0.text = "ADC Ch 0: " + this.ADC_ch0.options[this.ADC_ch0.value];
 		this.ADC_bias.text = "ADC bias current (0-15): " + this.ADC_bias.value;
-
 	},
-	Reg6: function(sig) {
-		this.unused = {value:(sig>>17)&0x7fff,type:'unused'};
-		this.d_en_ctrl = {value:(sig>>16)&1,type:'select',options:{0:'maximum voltage',1:'enable tuning'}};
-		this.d_s = {value:sig&0xffff,type:'input'};
-		this.d_en_ctrl.text = "Regulator D output control: " + this.d_en_ctrl.options[this.d_en_ctrl.value];
-		this.d_s.text = "Regulator D output voltage: " + this.d_s.value;
-	},
-	Reg7: function(sig) {
-		this.a_en_ctrl = {value:(sig>>31)&1,type:'select',options:{0:'maximum voltage',1:'enable tuning'}};
-		this.a_s = {value:(sig>>15)&0x7fff,type:'input'};
-		this.btmux_d = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.btmux = {value:sig&0x3fff,type:'input'};
-		this.a_en_ctrl.text = "Regulator A output control: " + this.a_en_ctrl.options[this.a_en_ctrl.value];
-		this.a_s.text = "Regulator A output voltage: " + this.a_s.value;
-		this.btmux_d.text = "MUX output: " + this.btmux_d.options[this.btmux_d.value];
-		this.btmux.text = "MUX output voltage: " + this.btmux.value
-	},
+	
 	Reg16: function(sig) {
 		this.ch31 = {value:sig,type:'binput',n:32};
-		this.ch31.text = "Ch 31-0 Masks. Masks the channel when bit TM (Reg 32) is clear. Injects a fixed pattern in the L0 pipeline when bit TM is set: " + bin_string(this.ch31.value,32);
+        this.ch31.text = "Ch 31-0 Masks. Masks the channel when bit TM (Reg 32) is clear. Injects a fixed pattern in the L0 pipeline when bit TM is set: " + bin_string(this.ch31.value,32);
+        
 	},
 	Reg17: function(sig) {
 		this.ch63 = {value:sig,type:'binput',n:32};
@@ -228,24 +245,25 @@ var Registers = {
 		this.chs.text = "Ch 225-224 L0 pipeline hit pattern bunch crossing: " + bin_string(this.chs.value,32);
 	}, */
 	Reg32: function(sig) {
-		this.unused1 = {value:(sig>>28)&0xf,type:'unused'};
-		this.TestPatt2 = {value:(sig>>24)&0xf,type:'binput',n:4};
-		this.TestPatt1 = {value:(sig>>20)&0xf,type:'binput',n:4};
-		this.unused2 = {value:(sig>>19)&1,type:'unused'};
-		this.TestPattEn = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.tm = {value:(sig>>16)&3,type:'select',options:{0:'Normal data taking',1:'Static test mode',2:'Test pulse mode'}};
-		this.unused3 = {value:(sig>>12)&0xf,type:'unused'};
-		this.RRmode = {value:(sig>>10)&3,type:'select',
-options:{0:'Read register disabled',1:'Read register if no pending LP/PR',2:'One read register if no PR pending, when RRforce set to one in register 0'}};
-		this.LPEn = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.PREn = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.unused4 = {value:(sig>>7)&1,type:'unused'};
-		this.MaskHPR = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.EnCount = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.TestPulseEn = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.unused5 = {value:sig&0xf,type:'unused'};
-		
-		this.tm.text = "Test Mode: " + this.tm.options[this.tm.value];
+        this.Latency = {value:(sig>>23)&0x1ff,type:'input'};
+        this.CalPulsePolarity = {value:(sig>>22)&1,type:'binput',n:1};
+        this.CalPulseEn = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.CurrDriv = {value:(sig>>18)&7,type:'input'};
+        this.TestPatt2 = {value:(sig>>14)&0xf,type:'binput',n:4};
+		this.TestPatt1 = {value:(sig>>10)&0xf,type:'binput',n:4};
+		this.TestPattEn = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.tm = {value:(sig>>7)&3,type:'select',options:{0:'Normal data taking',1:'Static test mode',2:'Test pulse mode'}};
+		this.RRmode = {value:(sig>>5)&3,type:'select',options:{0:'Read register disabled',1:'Read register if no pending LP/PR',2:'One read register if no PR pending, when RRforce set to one in register 0'}};
+		this.LPEn = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.PREn = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.MaskHPR = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.EnCount = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.TestPulseEn = {value:(sig&1),type:'select',options:{0:'disabled',1:'enabled'}};
+        this.Latency.text = "Latency in L0 pipeline in number of BC clocks: " + this.Latency.value;
+        this.CalPulsePolarity.text = "16BC wide calibration pulse polarity: " + this.CalPulsePolarity.value;
+        this.CalPulseEn.text = "Analog pulse functions at channel inputs: " + this.CalPulseEn.options[this.CalPulseEn.value];
+        this.CurrDriv.text = "Current Drive of DAT outputs: " + this.CurrDriv.value;
+        this.tm.text = "Test Mode: " + this.tm.options[this.tm.value];
 		this.LPEn.text = "LP Triggers data transmission: " + this.LPEn.options[this.LPEn.value];
 		this.PREn.text = "PR Triggers data transmission: " + this.PREn.options[this.PREn.vakue];
 		this.TestPulseEn.text = "Digital test pulse functions at input of pipeline: " + this.TestPulseEn.options[this.TestPulseEn.value];
@@ -256,43 +274,41 @@ options:{0:'Read register disabled',1:'Read register if no pending LP/PR',2:'One
 		this.TestPatt2.text = "Mask channels test pulse pattern: " + bin_string(this.TestPatt2.value,4);
 	},
 	Reg33: function(sig) {
-		this.unused1 = {value:(sig>>6)&0x3ffffff,type:'unused'};
-		this.CalPulsePolarity = {value:(sig>>5)&1,type:'binput',n:1};
-		this.CalPulseEn = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.unused2 = {value:(sig>>3)&1,type:'unused'};
-		this.CurrDriv = {value:sig&7,type:'input'};
-		this.CalPulsePolarity.text = "16BC wide calibration pulse polarity: " + this.CalPulsePolarity.value;
-		this.CurrDriv.text = "Current Drive of DAT outputs: " + this.CurrDriv.value;
-		this.CalPulseEn.text = "Analog pulse functions at channel inputs: " + this.CalPulseEn.options[this.CalPulseEn.value];
+		this.ReadoutTimeoutEnable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.LCB_ErrCount_Thr = {value:(sig>>23)&0xff,type:'input'};
+        this.DIS_CLKS_EN = {value:(sig>>22)&1, type:'select',options:{0:'disabled',1:'enabled'}};
+        this.DoFuse = {value:(sig>>16)&0x1f,type:'binput',n:24};
+        this.MCEn = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.MC = {value:(sig>>9)&0x3f,type:'input'};
+        this.DetMode = {value:(sig>>7)&3,type:'select',options:{0:'Hit',1:'Level',2:'Edge',3:'Clear'}};
+        this.DTESTOUTSEL = {value:(sig&0x7f),type:'binput',n:7};
+        this.ReadoutTimeoutEnable.text = "Reset on the packet building block: " + this.ReadoutTimeoutEnable.options[this.ReadoutTimeoutEnable.value];
+        this.DIS_CLKS_EN.text = "Enable the possbility to disable clocks: " + this.DIS_CLKS_EN.options[this.DIS_CLKS_EN.value];
+        this.V0ReadoutMode.text = "Enable to modify the packet format to be compatible with V0 mode: " + this.V0ReadoutMode.options[this.V0ReadoutMode.value];
+        this.LCB_ErrCount_Thr.text = "LCB Error Count Threshold: " + this.LCB_ErrCount_Thr.value;
+		this.DoFuse.text = "eFuse cells (23-0). Select at most one to be programmed";
+        this.MCEn.text = "Maximum cluster editing: " + this.MCEn.options[this.MCEn.value];
+        this.MC.text = "Maximum clusters (if editing enabled): " + this.MC.value;
+        this.DetMode.text = "Detection mode: " + this.DetMode.options[this.DetMode.value];
+        this.DTESTOUTSEL.text = "Monitor internal signals: " + bin_string(this.DTESTOUTSEL.value,7);
 	},
+    /*
 	Reg34: function(sig) {
 		this.BCoffset = {value:(sig>>24)&0xff,type:'input'};
 		this.BCFlagEn = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.unused = {value:(sig>>9)&0x3fff,type:'unused'};
-		this.Latency = {value:sig&0xff,type:'input'};
-		this.Latency.text = "Latency in L0 pipeline in number of BC clocks: " + this.Latency.value;
 		this.BCoffset.text = "BCID counter delta between event time and L0 time: " + this.BCoffset.value;
 		this.BCFlagEn.text = "Flag generator for BCID count mismatch: " + this.BCFlagEn.options[this.BCFlagEn.value];
 	},
 	Reg35: function(sig) {
 		this.unused1 = {value:(sig>>19)&0x1fff,type:'unused'};
-		this.MCEn = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.MC = {value:(sig>>12)&0x3f,type:'input'};
 		this.unused2 = {value:(sig>>2)&0x3ff,type:'unused'};
-		this.DetMode = {value:sig&3,type:'select',options:{0:'Hit',1:'Level',2:'Edge',3:'Clear'}};
-		this.MCEn.text = "Maximum cluster editing: " + this.MCEn.options[this.MCEn.value];
-		this.MC.text = "Maximum clusters (if editing enabled): " + this.MC.value;
-		this.DetMode.text = "Detection mode: " + this.DetMode.options[this.DetMode.value];
 	},
 	Reg36 : function(sig) {
 		this.LCB_SCmd_Err = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.LCB_ErrCnt_Ovfl = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.LCB_Decode_Err = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.LCB_Locked = {value:(sig>>10)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.PRFIFO_Full = {value:(sig>>9)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.PRFIFO_Empt = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.LPFIFO_Full = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.LPFIFO_Empt = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.RegFIFO_ovfl = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.RegFIFO_full = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.RegFIFO_empt = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}};
@@ -321,42 +337,59 @@ options:{0:'Read register disabled',1:'Read register if no pending LP/PR',2:'One
 	},
 	Reg38 : function(sig) {
 		this.unused = {value:(sig>>16)&0xffff,type:'unused'};
-		this.LCB_ErrCount_Thr = {value:sig&0xffff,type:'input'};
-		this.LCB_ErrCount_Thr.text = "LCB Error Count Threshold: " + this.LCB_ErrCount_Thr.value;
+	
 	},
+    */
 	Reg48: function(sig) {
-		this.CR43SEU = {value:(sig>>31)&1,type:'binput',n:1};
-		this.CR39SEU = {value:(sig>>30)&1,type:'binput',n:1};
-		this.CR35SEU = {value:(sig>>29)&1,type:'binput',n:1};
-		this.CR31SEU = {value:(sig>>28)&1,type:'binput',n:1};
-		this.CR27SEU = {value:(sig>>27)&1,type:'binput',n:1};
-		this.CR23SEU = {value:(sig>>26)&1,type:'binput',n:1};
-		this.CR19SEU = {value:(sig>>25)&1,type:'binput',n:1};
-		this.CR15SEU = {value:(sig>>24)&1,type:'binput',n:1};
-		this.CR11SEU = {value:(sig>>23)&1,type:'binput',n:1};
-		this.CR7SEU = {value:(sig>>22)&1,type:'binput',n:1};
-		this.CR3SEU = {value:(sig>>21)&1,type:'binput',n:1};
-		this.MT7SEU = {value:(sig>>20)&1,type:'binput',n:1};
-		this.MT6SEU = {value:(sig>>19)&1,type:'binput',n:1};
-		this.MT5SEU = {value:(sig>>18)&1,type:'binput',n:1};
-		this.MT4SEU = {value:(sig>>17)&1,type:'binput',n:1};
-		this.MT3SEU = {value:(sig>>16)&1,type:'binput',n:1};
-		this.MT2SEU = {value:(sig>>15)&1,type:'binput',n:1};
-		this.MT1SEU = {value:(sig>>14)&1,type:'binput',n:1};
-		this.MT0SEU = {value:(sig>>13)&1,type:'binput',n:1};
-		this.ADCS7SEU = {value:(sig>>12)&1,type:'binput',n:1};
+        this.ReadOutSEU = {value:(sig>>31)&1,type:'binput',n:1};
+        this.HPRCountSEU = {value:(sig>>30)&1,type:'binput',n:1};
+        this.HPRStateSEU = {value:(sig>>29)&1,type:'binput',n:1};
+        this.TopLSEU = {value:(sig>>28)&1,type:'binput',n:1};
+        this.unused1 = {value:(sig>>27)&1,type:'unused'};
+        this.SCReg = {value:(sig>>26)&1,type:'binput',n:1};
+        this.CR47SEU = {value:(sig>>25)&1,type:'binput',n:1};
+		this.CR43SEU = {value:(sig>>24)&1,type:'binput',n:1};
+		this.CR39SEU = {value:(sig>>23)&1,type:'binput',n:1};
+		this.CR35SEU = {value:(sig>>22)&1,type:'binput',n:1};
+		this.CR31SEU = {value:(sig>>21)&1,type:'binput',n:1};
+		this.CR27SEU = {value:(sig>>20)&1,type:'binput',n:1};
+		this.CR23SEU = {value:(sig>>19)&1,type:'binput',n:1};
+		this.CR19SEU = {value:(sig>>18)&1,type:'binput',n:1};
+		this.CR15SEU = {value:(sig>>17)&1,type:'binput',n:1};
+		this.CR11SEU = {value:(sig>>16)&1,type:'binput',n:1};
+		this.CR7SEU = {value:(sig>>15)&1,type:'binput',n:1};
+		this.CR3SEU = {value:(sig>>14)&1,type:'binput',n:1};
+		this.MT7SEU = {value:(sig>>13)&1,type:'binput',n:1};
+		this.MT6SEU = {value:(sig>>12)&1,type:'binput',n:1};
+		this.MT5SEU = {value:(sig>>11)&1,type:'binput',n:1};
+		this.MT4SEU = {value:(sig>>10)&1,type:'binput',n:1};
+		this.MT3SEU = {value:(sig>>9)&1,type:'binput',n:1};
+		this.MT2SEU = {value:(sig>>8)&1,type:'binput',n:1};
+		this.MT1SEU = {value:(sig>>7)&1,type:'binput',n:1};
+		this.MT0SEU = {value:(sig>>6)&1,type:'binput',n:1};
+        this.ADCS3SEU = {value:(sig>>5)&1,type:'binput',n:1};
+        this.ADCS2SEU = {value:(sig>>8)&1,type:'binput',n:1};
+		this.ADCS1SEU = {value:(sig>>7)&1,type:'binput',n:1};
+        this.unused2 = {value:(sig>>2)&1,type:'unused'};
+        this.CFG1SEU = {value:(sig>>1)&1,type:'binput',n:1};
+		this.CFG0SEU = {value:sig&1,type:'binput',n:1};	
+		/*
+        this.ADCS7SEU = {value:(sig>>12)&1,type:'binput',n:1};
 		this.ADCS6SEU = {value:(sig>>11)&1,type:'binput',n:1};
 		this.ADCS4SEU = {value:(sig>>10)&1,type:'binput',n:1};
 		this.ADCS3SEU = {value:(sig>>9)&1,type:'binput',n:1};
-		this.ADCS2SEU = {value:(sig>>8)&1,type:'binput',n:1};
-		this.ADCS1SEU = {value:(sig>>7)&1,type:'binput',n:1};
 		this.CFG6SEU = {value:(sig>>6)&1,type:'binput',n:1};
 		this.CFG5SEU = {value:(sig>>5)&1,type:'binput',n:1};
 		this.CFG4SEU = {value:(sig>>4)&1,type:'binput',n:1};
 		this.CFG3SEU = {value:(sig>>3)&1,type:'binput',n:1};
 		this.CFG2SEU = {value:(sig>>2)&1,type:'binput',n:1};
-		this.CFG1SEU = {value:(sig>>1)&1,type:'binput',n:1};
-		this.CFG0SEU = {value:sig&1,type:'binput',n:1};	
+        */
+        this.ReadOutSEU.text = "ReadOutSEU: " + bin_string(this.ReadOutSEU.value,1);
+        this.HPRCountSEU.text = "HPRCountSEU: " + bin_string(this.HPRCountSEU.value,1);
+        this.HPRStateSEU.text = "HPRStateSEU: " + bin_string(this.HPRStateSEU.value,1);
+        this.TopLSEU.text = "TopLSEU: " + bin_string(this.TopLSEU.value,1);
+        this.SCReg.text = "SCRegSEU: " + bin_string(this.SCReg.value,1);
+        this.CR437EU.text = "CR47SEU: " + bin_string(this.CR47SEU.value,1);
 		this.CR43SEU.text = "CR43SEU: " + bin_string(this.CR43SEU.value,1);	
 		this.CR39SEU.text = "CR39SEU: " + bin_string(this.CR39SEU.value,1);	
 		this.CR35SEU.text = "CR35SEU: " + bin_string(this.CR35SEU.value,1);
@@ -376,47 +409,107 @@ options:{0:'Read register disabled',1:'Read register if no pending LP/PR',2:'One
 		this.MT2SEU.text = "MT2SEU: " + bin_string(this.MT2SEU.value,1);
 		this.MT1SEU.text = "MT1SEU: " + bin_string(this.MT1SEU.value,1);
 		this.MT0SEU.text = "MT0SEU: " + bin_string(this.MT0SEU.value,1);
+        this.ADCS3SEU.text = "ADCS3SEU: " + bin_string(this.ADCS3SEU.value,1);
+        this.ADCS2SEU.text = "ADCS2SEU: " + bin_string(this.ADCS2SEU.value,1);	
+		this.ADCS1SEU.text = "ADCS1SEU: " + bin_string(this.ADCS1SEU.value,1);
+        this.CFG1SEU.text = "CFG1SEU: " + bin_string(this.CFG1SEU.value,1);
+		this.CFG0SEU.text = "CFG0SEU: " + bin_string(this.CFG0SEU.value,1);
+        /*		
 		this.ADCS7SEU.text = "ADCS7SEU: " + bin_string(this.ADCS7SEU.value,1);	
 		this.ADCS6SEU.text = "ADCS6SEU: " + bin_string(this.ADCS6SEU.value,1);	
 		this.ADCS4SEU.text = "ADCS4SEU: " + bin_string(this.ADCS4SEU.value,1);	
-		this.ADCS3SEU.text = "ADCS3SEU: " + bin_string(this.ADCS3SEU.value,1);	
-		this.ADCS2SEU.text = "ADCS2SEU: " + bin_string(this.ADCS2SEU.value,1);	
-		this.ADCS1SEU.text = "ADCS1SEU: " + bin_string(this.ADCS1SEU.value,1);	
 		this.CFG3SEU.text = "CFG3SEU: " + bin_string(this.CFG3SEU.value,1);
 		this.CFG2SEU.text = "CFG2SEU: " + bin_string(this.CFG2SEU.value,1);
-		this.CFG1SEU.text = "CFG1SEU: " + bin_string(this.CFG1SEU.value,1);
-		this.CFG0SEU.text = "CFG0SEU: " + bin_string(this.CFG0SEU.value,1);
+        */
 	},
 	Reg49 : function(sig) {
-		this.unused = {value:(sig>>5)&0x7ffffff,type:'unused'};
-		this.Ser = {value:(sig>>4)&1,type:'binput',n:1};
+		this.unused = {value:(sig>>29)&7,type:'unused'};
+        this.PRFIFO_OverFlow = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.PRFIFO_Full = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.PRFIFO_Empt = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.LPFIFO_OverFlow = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.LPFIFO_Full = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.LPFIFO_AlmostFull = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.LPFIFO_Empt = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.L0HoldFifoOverFlow = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.L0HoldFifoEmpty = {value:(sig>>19)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.ClusterFifoOverflow = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.ClusterFifoFull = {value:(sig>>17)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.ClusterFifoAlmostFull = {value:(sig>>16)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.ClusterFifoEmpty = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.HPRFifoOverflow = {value:(sig>>14)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.HPRFifoFull = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.HPRFifoAlmostFull = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.HPRFifoEmpty = {value:(sig>>11)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.EvtIDLatchSEU = {value:(sig>>10)&1,type:'binput',n:1};
+        this.L0SEU = {value:(sig>>9)&1,type:'binput',n:1};
+        this.PktBldSEU = {value:(sig>>8)&1,type:'binput',n:1};
+        this.unused1 = {value:(sig>>4)&0x1f,type:'unused'};
+        this.unused2 = {value:(sig&0xf),type:'unused'};
+        /*
+        this.Ser = {value:(sig>>4)&1,type:'binput',n:1};
 		this.HPR = {value:(sig>>3)&1,type:'binput',n:1};
 		this.TopL = {value:(sig>>2)&1,type:'binput',n:1};
-		this.SCReg = {value:(sig>>1)&1,type:'binput',n:1};
 		this.CR47 = {value:sig&1,type:'binput',n:1};
-		this.Ser.text = "SerSEU: " + bin_string(this.Ser.value,1);
+        */
+        this.PRFIFO_OverFlow.text = "PRFIFO_OverFlow contribution to flag bit sum: " + this.PRFIFO_Full.options[this.PRFIFO_OverFlow.value];
+        this.PRFIFO_Full.text = "PRFIFO_Full contribution to flag bit sum: " + this.PRFIFO_Full.options[this.PRFIFO_Full.value];
+		this.PRFIFO_Empt.text = "PRFIFO_Empt contribution to flag bit sum: " + this.PRFIFO_Empt.options[this.PRFIFO_Empt.value];
+		this.LPFIFO_OverFlow.text = "LPFIF0_OverFlow contribution to flag bit sum: " + this.LPFIFO_OverFlow.options[this.LPFIFO_OverFlow.value];
+        this.LPFIFO_Full.text = "LPFIFO_Full contribution to flag bit sum: " + this.LPFIFO_Full.options[this.LPFIFO_Full.value];
+		this.LPFIFO_AlmostFull.text = "LPFIFO_AlmostFull contribution to flag bit sum: " + this.LPFIFO_AlmostFull.options[this.LPFIFO_AlmostFull.value];
+        this.LPFIFO_Empt.text = "LPFIFO_Empt contribution to flag bit sum: " + this.LPFIFO_Empt.options[this.LPFIFO_Empt.value];
+        this.L0HoldFifoOverFlow.text = "L0HoldFifoOverFlow contribution to flag bit sum: " + this.L0HoldFifoOverFlow.options[this.L0HoldFifoOverFlow.value];
+        this.L0HoldFifoEmpty.text = "L0HoldFifoEmpty contribution to flag bit sum: " + this.L0HoldFifoEmpty.options[this.L0HoldFifoEmpty.value];
+        this.ClusterFifoOverflow.text = "ClusterFifoOverflow contribution to flag bit sum: " + this.ClusterFifoOverflow.options[this.ClusterFifoOverflow.value];
+        this.ClusterFifoFull.text = "ClusterFifoFull contribution to flag bit sum: " + this.ClusterFifoFull.options[this.ClusterFifoFull.value];
+        this.ClusterFifoAlmostFull.text = "ClusterFifoAlmostFull contribution to flag bit sum: " + this.ClusterFifoAlmostFull.options[this.ClusterFifoAlmostFull.value];
+        this.ClusterFifoEmpty.text = "ClusterFifoEmpty contribution to flag bit sum: " + this.ClusterFifoEmpty.options[this.ClusterFifoEmpty.value];
+        this.HPRFifoOverflow.text = "HPRFifoOverflow contribution to flag bit sum: " + this.HPRFifoOverflow.options[this.HPRFifoOverflow.value];
+        this.HPRFifoFull.text = "HPRFifoFull contribution to flag bit sum: " + this.HPRFifoFull.options[this.HPRFifoFull.value];
+        this.HPRFifoAlmostFull.text = "HPRFifoAlmostFull contribution to flag bit sum: " + this.HPRFifoAlmostFull.options[this.HPRFifoAlmostFull.value];
+        this.HPRFifoEmpty.text = "HPRFifoEmpty contribution to flag bit sum: " + this.HPRFifoEmpty.options[this.HPRFifoEmpty.value];
+        this.EvtIDLatchSEU.text = "EvtIDLatchSEU: " + bin_string(this.EvtIDLatchSEU.value,1);
+        this.L0SEU.text = "L0SEU: " + bin_string(this.L0SEU.value,1);
+        this.PktBldSEU.text = "PktBldSEU: " + bin_string(this.PktBldSEU.value,1);
+        /*
+        this.Ser.text = "SerSEU: " + bin_string(this.Ser.value,1);
 		this.HPR.text = "HPR_SEU: " + bin_string(this.HPR.value,1);
 		this.TopL.text = "TopLSEU: " + bin_string(this.TopL.value,1);
-		this.SCReg.text = "SCRegSEU: " + bin_string(this.SCReg.value,1);
 		this.CR47.text = "CR47SEU: " + bin_string(this.CR47.value,1);
+        */
 	},
 	Reg50 : function(sig) {
-		this.unused = {value:(sig>>24)&0xff,type:'unused'};
-		this.eFuse = {value:sig&0xffffff,type:'binput',n:24};
+        this.unused = {value:(sig>>24)&0xff,type:'unused'};
+		this.eFuse = {value:(sig&0xffffff),type:'binput',n:24};
 		this.eFuse.text = "eFuse (23-0): " + bin_string(this.eFuse.value,24);
-		
+
 	},
 	Reg51 : function(sig) {
-		this.unused1 = {value:(sig>>28)&0xf,type:'unused'};
-		this.ADC_dat = {value:(sig>>16)&0xfff,type:'input'};
-		this.unused2 = {value:(sig>>9)&0x7f,type:'unused'};
+        this.K2_pending = {value:(sig>>31)&1,type:'checkbox',checked:1,unchecked:0};
+        this.RegFIFO_ovfl = {value:(sig>>30)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.RegFIFO_full = {value:(sig>>29)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.RegFIFO_almostfull = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.RegFIFO_empt = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.ADCMeasurementReady = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.ADC_dat = {value:(sig>>14)&0xfff,type:'input'};
+        this.btmux_d = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.btmux = {value:(sig>>9)&0xf,type:'input'};
 		this.ADC_en = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch3 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch2 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch1 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch0 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_bias = {value:sig&0xf,type:'input'};
-		this.ADC_dat.text = "ADC data: " + this.ADC_dat.value;
+        this.K2_pending.text = "Pending K2 Slow Command Command: " + ((this.K2_pending.value==this.K2_pending.checked)?'Yes':'No');
+		this.RegFIFO_ovfl.text = "RegFIFO_ovfl contribution to flag bit sum: " + this.RegFIFO_ovfl.options[this.RegFIFO_ovfl.value];
+		this.RegFIFO_full.text = "RegFIFO_full contribution to flag bit sum: " + this.RegFIFO_full.options[this.RegFIFO_full.value];
+        this.RegFIFO_almostfull.text = "RegFIFO_almostfull contribution to flag bit sum: " + this.RegFIFO_full.options[this.RegFIFO_full];
+		this.RegFIFO_empt.text = "RegFIFO_empt contribution to flag bit sum: " + this.RegFIFO_empt.options[this.RegFIFO_empt.value];
+        this.ADCMeasurementReady.text = "New ADC sample is ready: " + this.ADCMeasurementReady.options[this.ADCMeasurementReady.value];
+        this.ADC_dat.text = "ADC data: " + this.ADC_dat.value;
+        this.btmux_d.text = "MUX output: " + this.btmux_d.options[this.btmux_d.value];
+		this.btmux.text = "MUX output voltage: " + this.btmux.value;
 		this.ADC_en.text = "ADC: " + this.ADC_en.options[this.ADC_en.value];
 		this.ADC_ch3.text = "ADC Ch3: " + this.ADC_ch3.options[this.ADC_ch3.value];
 		this.ADC_ch2.text = "ADC Ch2: " + this.ADC_ch2.options[this.ADC_ch2.value];	
@@ -425,23 +518,48 @@ options:{0:'Read register disabled',1:'Read register if no pending LP/PR',2:'One
 		this.ADC_bias.text = "ADC Bias: " + this.ADC_bias.value;
 	},
 	Reg52 : function(sig) {
-		this.unused = {value:(sig>>16)&0xffff,type:'unused'};
-		this.LCB_ErrCount = {value:sig&0xffff,type:'input'};
-		this.LCB_ErrCount.text = "LCB Error Count: " + this.LCB_ErrCount.value;
+        this.SEUCount = {value:(sig>>24)&0xff,type:'binput',n:8};
+		this.unused = {value:(sig>>19)&0x1f,type:'unused'};
+        this.LCB_SCmd_Err = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
+        this.LCB_ErrCnt_Ovfl = {value:(sig>>17)&1,type:'checkbox',checked:1,unchecked:0};
+        this.LCB_Decode_Err = {value:(sig>>16)&1,type:'checkbox',checked:1,unchecked:0};
+        this.LCB_S = {value:(sig>>8)&0xff,type:'input'};
+        this.LCB_ErrCount = {value:(sig&0xff),type:'input'};
+        this.SEUCount.text = "SEU counter: " + this.SEUCount.value;
+        this.LCB_SCmd_Err.text = "Error in Slow Command LCB sequence: " + ((this.LCB_SCmd_Err.value==this.LCB_SCmd_Err.checked)?'Yes':'No');
+        this.LCB_ErrCnt_Ovfl.text = "LCB Error Count Threshold exceeded: " + ((this.LCB_ErrCnt_Ovfl.value==this.LCB_ErrCnt_Ovfl.checked)?'Yes':'No');
+		this.LCB_Decode_Err.text = "LCB invalid symbol, parity error or bad nibble: " + ((this.LCB_Decode_Err.value==this.LCB_Decode_Err.checked)?'Yes':'No');
+        this.LCB_S.text = "Raw LCB frame data: " + this.LCB_S.value;
+        this.LCB_ErrCount.text = "LCB Error Count: " + this.LCB_ErrCount.value;
 	},
+
+    Reg53: function(sig) {
+         this.unused = {value:(sig>>24)&0xff,type:'unused'}
+         this.value2eFuse = {value:(sig&0xffffff),type:'binput',n:24};
+         this.value2eFuse.text = "value2eFuse (23-0): " + bin_string(this.value2eFuse.value,24);
+
+    },
+
+    Reg54: function(sig) {
+        this.ringOscRadMonitoring_counts = {value:(sig&0xffffffff),type:'binput',n:32}
+        this.ringOscRadMonitoring_counts.text = "Output of a ring oscillator: " + this.ringOscRadMonitoring_counts.value;
+
+    },
+
 	Reg63: function(sig) {
-		this.LCB_S = {value:(sig>>16)&0xffff,type:'input'};
-		this.LCB_SCmd_Err = {value:(sig>>15)&1,type:'checkbox',checked:1,unchecked:0};
-		this.LCB_ErrCnt_Ovfl = {value:(sig>>14)&1,type:'checkbox',checked:1,unchecked:0};
-		this.LCB_Decode_Err = {value:(sig>>13)&1,type:'checkbox',checked:1,unchecked:0};
+        this.LCB_S = {value:(sig>>16)&0xffff,type:'input'};
+        this.LCB_SCmd_Err = {value:(sig>>15)&1,type:'checkbox',checked:1,unchecked:0};
+        this.LCB_ErrCnt_Ovfl = {value:(sig>>17)&1,type:'checkbox',checked:1,unchecked:0};
+        this.LCB_Decode_Err = {value:(sig>>13)&1,type:'checkbox',checked:1,unchecked:0};
+        this.LCB_S.text = "Raw LCB frame data: " + this.LCB_S.value;
+        this.LCB_SCmd_Err.text = "Error in Slow Command LCB sequence: " + ((this.LCB_SCmd_Err.value==this.LCB_SCmd_Err.checked)?'Yes':'No');
+        this.LCB_ErrCnt_Ovfl.text = "LCB Error Count Threshold exceeded: " + ((this.LCB_ErrCnt_Ovfl.value==this.LCB_ErrCnt_Ovfl.checked)?'Yes':'No');
+        this.LCB_Decode_Err.text = "LCB invalid symbol, parity error or bad nibble: " + ((this.LCB_Decode_Err.value==this.LCB_Decode_Err.checked)?'Yes':'No');
 		this.LCB_Locked = {value:(sig>>12)&1,type:'checkbox',checked:1,unchecked:0};
 		this.ADC_dat = {value:sig&0xfff,type:'input'};
 		this.ADC_dat.text = "ADC Data: " + this.ADC_dat.value;
 		this.LCB_Locked.text = "LCB circuit synchronized: " + ((this.LCB_Locked.value==this.LCB_Locked.checked)?'Yes':'No');
-		this.LCB_Decode_Err.text = "LCB invalid symbol, parity error or bad nibble: " + ((this.LCB_Decode_Err.value==this.LCB_Decode_Err.checked)?'Yes':'No');
-		this.LCB_ErrCnt_Ovfl.text = "LCB Error Count Threshold exceeded: " + ((this.LCB_ErrCnt_Ovfl.value==this.LCB_ErrCnt_Ovfl.checked)?'Yes':'No');
-		this.LCB_SCmd_Err.text = "Error in Slow Command LCB sequence: " + ((this.LCB_SCmd_Err.value==this.LCB_SCmd_Err.checked)?'Yes':'No');
-		this.LCB_S.text = "Raw LCB frame data: " + this.LCB_S.value;
+	
 	},
 	Reg64: function(sig) {
 		this.trimdac_ch7 = {value:(sig>>28)&0xf,type:'binput',n:4};
