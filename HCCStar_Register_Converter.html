@@ -30,7 +30,7 @@ urchinTracker();
 
 //Default signals
 var defaults = {
-	Reg0:0,Reg1:0,Reg3:0,Reg4:0,Reg5:0,Reg6:0xdeadbe00,Reg7:0,Reg8:0,Reg9:0,Reg10:0,Reg15:0,Reg16:0,Reg17:0xf0000000,
+	Reg0:0,Reg1:0,Reg3:0,Reg4:0,Reg5:0,Reg6:0xdeadbe04,Reg7:0,Reg8:0,Reg9:0,Reg10:0,Reg15:0,Reg16:0,Reg17:0xf0000000,
 	Reg32:0,Reg33:0,Reg34:0,Reg35:0x04ff3b05,Reg38:0,Reg39:0x00000014,Reg40:0,Reg41:0x00023001,Reg42:0x00023001,Reg43:0,
 	Reg44:0x0000018e,Reg45:0,Reg46:0,Reg47:0,Reg48:0x00401800
 };
@@ -99,7 +99,7 @@ Reg0 : function(sig) {
 	this.Reg_34_SEU = {value:(sig>>3)&1,type:'binput',n:1};
 	this.Reg_33_SEU = {value:(sig>>2)&1,type:'binput',n:1};
 	this.Reg_32_SEU = {value:(sig>>1)&1,type:'binput',n:1};
-	this.Reg_17_SEU = {value:(sig>>0)&1,type:'binput',n:1};
+	this.Reg_17_SEU = {value:sig&1,type:'binput',n:1};
 	this.HPR_State_SEU.text = "SEU in HPR Logic State Machine: " + bin_string(this.HPR_State_SEU.value,1);
 	this.HPR_Counter_SEU.text = "SEU in HPR Counter: " + bin_string(this.HPR_Counter_SEU.value,1);
     this.Reg_48_SEU = "SEU in Register 48: " + bin_string(this.Reg_48_SEU.value,1);
@@ -188,15 +188,15 @@ Reg5 : function(sig) {
     this.ana_set.text = "Analog MUX setting:" +this.ana_set.value;
 },
 Reg6 : function(sig) {
-    this.nontrivial_constant = {value:(sig>>8)&0xffffff, type:'select', options:{0xdeadbe: 'true',0:'false'}};
+    this.nontrivial_constant = {value:(sig>>8)&0xffffff, type:'checkbox', checked:0xdeadbe,unchecked:0};
     this.unused = {value:(sig>>5)&7, type:'unused'};
     this.prlp_sending = {value:(sig>>4)&1, type:'select', options:{0:'disabled', 1:'enabled'}};
-	this.HCCStar_Design_Version = {value:(sig>>2)&3,type:'select',options:{01:'2',00:'1'}};
+	this.HCCStar_Design_Version = {value:(sig>>2)&3,type:'checkbox',checked:01,unchecked:0};
 	this.GPI1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.GPI0 = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
-    this.nontrivial_constant.text = "non-trivial constant: " + this.nontrivial_constant.options[this.nontrivial_constant.value];
+    this.nontrivial_constant.text = "non-trivial constant: " + ((this.nontrivial_constant.value==this.nontrivial_constant.checked)?'Yes':'No');
     this.prlp_sending.text = "Sending PRLP commands to ABCs: " + this.prlp_sending.options[this.prlp_sending.value];
-	this.HCCStar_Design_Version.text = "HCCStar Design Version: " + this.HCCStar_Design_Version.options[this.HCCStar_Design_Version.value];
+	this.HCCStar_Design_Version.text = "HCCStar Design Version: " + ((this.HCCStar_Design_Version.value==this.HCCStar_Design_Version.checked)?'Yes':'No');
 	this.GPI1.text = "Status of GPI1 pad: " + this.GPI1.options[this.GPI1.value];
 	this.GPI0.text = "Status of GPI0 pad: " + this.GPI0.options[this.GPI0.value];
 },
