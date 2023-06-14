@@ -10,7 +10,7 @@ _uacct = "UA-67976-1";
 urchinTracker();
 </script>
 
-<title>AMACv2</title>
+<title>AMACStar</title>
 <style>
 .right {
 	float:right;
@@ -97,21 +97,26 @@ var max_test = 0xffffffff;
 var Registers = {
 Reg0 : function(sig) {
 	this.am_enable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.unused1 = {value:(sig>>30)&1,type:'unused'};
 	this.WRN_en = {value:(sig>>29)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.DCDCen = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}}; 
 	this.HV3_en = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}}; 
 	this.HV2_en = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.HV1_en = {value:(sig>>25)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.HV0_en = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.unused2 = {value:(sig>>23)&1,type:'unused'};
 	this.LDOy2en_en = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.LDOy1en_en = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.LDOy0en_en = {value:(sig>>20)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.unused6 = {value:(sig>>19)&1,type:'unused'};
 	this.LDOx2en_en = {value:(sig>>18)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.LDOx1en_en = {value:(sig>>17)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.LDOx0en_en = {value:(sig>>16)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.unused3 = {value:(sig>>13)&7,type:'unused'};
 	this.GPI = {value:(sig>>12)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+	this.unused4 = {value:(sig>>9)&7,type:'unused'};
 	this.PGOOD = {value:(sig>>8)&1,type: 'select',options:{0:'disabled',1:'enabled'}};
-	this.unused = {value:(sig>>6)&3, type:'unused'};
+	this.unused5 = {value:(sig>>6)&3, type:'unused'};
 	this.WRNIlock  = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.DCDCIlock  = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.HV2Ilock  = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}};
@@ -120,7 +125,7 @@ Reg0 : function(sig) {
 	this.XIlock  = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.am_enable.text = "AM: " + this.am_enable.options[this.am_enable.value];
 	this.WRN_en.text = "WARN: " + this.WRN_en.options[this.WRN_en.value];
-	this.DCDC.text = "DCDC: " + this.DCDC.options[this.DCDc.value];
+	this.DCDCen.text = "DCDC: " + this.DCDCen.options[this.DCDCen.value];
 	this.HV3_en.text = "HV3: " + this.HV3_en.options[this.HV3_en.value];  
 	this.HV2_en.text = "HV2: " + this.HV2_en.options[this.HV2_en.value];  
 	this.HV1_en.text = "HV1: " + this.HV1_en.options[this.HV1_en.value];  
@@ -133,7 +138,7 @@ Reg0 : function(sig) {
 	this.LDOx0en_en.text = "X0 LDO: " + this.LDOx0en_en.options[this.LDOx0en_en.value];  
 	this.GPI.text = "GPI: " + this.GPI.options[this.GPI.value];
 	this.PGOOD.text = "Power Good: " + this.PGOOD.options[this.PGOOD.value];
-	this.wRNIlock.text = "WARN: " + this.warnIlock.options[this.warnIlock.value];
+	this.WRNIlock.text = "WARN: " + this.WRNIlock.options[this.WRNIlock.value];
 	this.DCDCIlock.text = "DCDC: " + this.DCDCIlock.options[this.DCDCIlock.value];
 	this.HV2Ilock.text = "HV2: " + this.HV2Ilock.options[this.HV2Ilock.value];
 	this.HV0Ilock.text = "HV0: " + this.HV0Ilock.options[this.HV0Ilock.value];
