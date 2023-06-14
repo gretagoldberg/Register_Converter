@@ -1,4 +1,5 @@
 
+
 <html>
 <head>
 <meta charset="utf-8"/>
@@ -258,7 +259,7 @@ var Registers = {
 		this.PREn = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.MaskHPR = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.EnCount = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.TestPulseEn = {value:(sig&1),type:'select',options:{0:'disabled',1:'enabled'}};
+		this.TestPulseEn = {value:(sig>>0)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.Latency.text = "Latency in L0 pipeline in number of BC clocks: " + this.Latency.value;
         this.CalPulsePolarity.text = "Calibration pulse polarity: " + this.CalPulsePolarity.value;
         this.CalPulseEnable.text = "Analog pulse functions at channel inputs: " + this.CalPulseEnable.options[this.CalPulseEnable.value];
