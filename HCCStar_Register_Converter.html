@@ -83,7 +83,7 @@ var Registers = {
 Reg0 : function(sig) {
 	this.HPR_State_SEU = {value:(sig>>31)&1,type:'binput',n:1};
 	this.HPR_Counter_SEU = {value:(sig>>30)&1,type:'binput',n:1};
-    this.NC = {value:(sig>>16)&0x3fff,type:'unused'};
+    this.unused = {value:(sig>>16)&0x3fff,type:'unused'};
     this.Reg_48_SEU = {value:(sig>>15)&1,type:'binput',n:1};
 	this.Reg_47_SEU = {value:(sig>>14)&1,type:'binput',n:1};
 	this.Reg_46_SEU = {value:(sig>>13)&1,type:'binput',n:1};
@@ -188,15 +188,15 @@ Reg5 : function(sig) {
     this.ana_set.text = "Analog MUX setting:" +this.ana_set.value;
 },
 Reg6 : function(sig) {
-    this.nontrivial_constant = {value:(sig>>8)&0xffffff, type:'checkbox', checked:0xdeadbe,unchecked:0};
+    this.nontrivial_constant = {value:(sig>>8)&0xffffff, type:'select',options:{0xdeadbe:'DEADBE'}};
     this.unused = {value:(sig>>5)&7, type:'unused'};
     this.prlp_sending = {value:(sig>>4)&1, type:'select', options:{0:'disabled', 1:'enabled'}};
-	this.HCCStar_Design_Version = {value:(sig>>2)&3,type:'checkbox',checked:01,unchecked:0};
+	this.HCCStar_Design_Version = {value:(sig>>2)&3,type:'select',options:{0b01:'V1'}};
 	this.GPI1 = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 	this.GPI0 = {value:sig&1,type:'select',options:{0:'disabled',1:'enabled'}};
-    this.nontrivial_constant.text = "non-trivial constant: " + ((this.nontrivial_constant.value==this.nontrivial_constant.checked)?'Yes':'No');
+    this.nontrivial_constant.text = "non-trivial constant: " + this.nontrivial_constant.options[this.nontrivial_constant.value];
     this.prlp_sending.text = "Sending PRLP commands to ABCs: " + this.prlp_sending.options[this.prlp_sending.value];
-	this.HCCStar_Design_Version.text = "HCCStar Design Version: " + ((this.HCCStar_Design_Version.value==this.HCCStar_Design_Version.checked)?'Yes':'No');
+	this.HCCStar_Design_Version.text = "HCCStar Design Version: " + this.HCCStar_Design_Version.options[this.HCCStar_Design_Version.value];
 	this.GPI1.text = "Status of GPI1 pad: " + this.GPI1.options[this.GPI1.value];
 	this.GPI0.text = "Status of GPI0 pad: " + this.GPI0.options[this.GPI0.value];
 },
@@ -265,24 +265,24 @@ Reg10 : function(sig) {
 Reg15 : function(sig) {
 	this.lcb_frame_raw = {value:(sig>>16)&0xffff,type:'input'};
 	this.lcb_scmd_errcount = {value:(sig>>8)&0xff, type:'input'};
-    this.lcb_scmd_err = {value:(sig>>7)&1,type:'checkbox',checked:1,unchecked:0};
-	this.R3L1_errcount_ovfl = {value:(sig>>6)&1,type:'checkbox',checked:1,unchecked:0};
-	this.ePllInstantLock = {value:(sig>>5)&1,type:'checkbox',checked:1,unchecked:0};
-	this.k2_pending = {value:(sig>>4)&1,type:'checkbox',checked:1,unchecked:0};
-	this.lcb_errcount_ovfl = {value:(sig>>3)&1,type:'checkbox',checked:1,unchecked:0};
-	this.lcb_decode_err = {value:(sig>>2)&1,type:'checkbox',checked:1,unchecked:0};
-	this.lcb_locked = {value:(sig>>1)&1,type:'checkbox',checked:1,unchecked:0};
-	this.R3L1_locked = {value:sig&1,type:'checkbox',checked:1,unchecked:0};
+    this.lcb_scmd_err = {value:(sig>>7)&1,type:'select',options:{0:'low',1:'high'}};
+	this.R3L1_errcount_ovfl = {value:(sig>>6)&1,type:'select',options:{0:'low',1:'high'}};
+	this.ePllInstantLock = {value:(sig>>5)&1,type:'select',options:{0:'low',1:'high'}};
+	this.k2_pending = {value:(sig>>4)&1,type:'select',options:{0:'low',1:'high'}};
+	this.lcb_errcount_ovfl = {value:(sig>>3)&1,type:'select',options:{0:'low',1:'high'}};
+	this.lcb_decode_err = {value:(sig>>2)&1,type:'select',options:{0:'low',1:'high'}};
+	this.lcb_locked = {value:(sig>>1)&1,type:'select',options:{0:'low',1:'high'}};
+	this.R3L1_locked = {value:sig&1,type:'select',options:{0:'low',1:'high'}};
 	this.lcb_frame_raw.text = "LCB Raw Frame: " + this.lcb_frame_raw.value;
 	this.lcb_scmd_errcount.text = "LCB slow control error count: " + this.lcb_scmd_errcount.value;
-    this.lcb_scmd_err.text = "LCB Slow Command Error (not latched): " + (this.lcb_scmd_err.checked?'Yes':'No');
-	this.R3L1_errcount_ovfl.text = "R3L1 Error Counter Overflowed: " + (this.R3L1_errcount_ovfl.checked?'Yes':'No');
-	this.ePllInstantLock.text = "PLL Lock Indicator: " + (this.ePllInstantLock.checked?'Yes':'No');
-	this.k2_pending.text = "Pending K2 Slow Command: " + (this.k2_pending.checked?'Yes':'No');
-	this.lcb_errcount_ovfl.text = "LCB Error Counter Overflowed: " + (this.lcb_errcount_ovfl.checked?'Yes':'No');
-	this.lcb_decode_err.text = "LCB Decode Error: " + (this.lcb_decode_err.checked?'Yes':'No');
-	this.lcb_locked.text = "LCB Locked Flag: " + (this.lcb_locked.checked?'Yes':'No');
-	this.R3L1_locked.text = "R3L1 Locked Flag: " + (this.R3L1_locked.checked?'Yes':'No');
+    this.lcb_scmd_err.text = "LCB Slow Command Error (not latched): " + this.lcb_scmd_err.options[this.lcb_scmd_err.value];
+	this.R3L1_errcount_ovfl.text = "R3L1 Error Counter Overflowed: " + this.R3L1_errcount_ovfl.options[this.R3L1_errcount_ovfl.value];
+	this.ePllInstantLock.text = "PLL Lock Indicator: " + this.ePllInstantLock.options[this.ePllInstantLock.value];
+	this.k2_pending.text = "Pending K2 Slow Command: " + this.k2_pending.options[this.k2_pending.value];
+	this.lcb_errcount_ovfl.text = "LCB Error Counter Overflowed: " + this.lcb_errcount_ovfl.options[this.lcb_errcount_ovfl.value];
+	this.lcb_decode_err.text = "LCB Decode Error: " + this.lcb_decode_err.options[this.lcb_decode_err.value];
+	this.lcb_locked.text = "LCB Locked Flag: " + this.lcb_locked.options[this.lcb_locked.value];
+	this.R3L1_locked.text = "R3L1 Locked Flag: " + this.R3L1_locked.options[this.R3L1_locked.value];
 },
 Reg16 : function(sig) {
     this.unused = {value:(sig>>5)&0xfffffff, type: 'unused'};
@@ -359,7 +359,7 @@ Reg35 : function(sig) {
    	this.ePllRes={value:(sig>>8)&0xf,type:'select',options:{0:'0.5 kOhm',1:'1 kOhm',2:'1.5 kOhm',3:'2 kOhm',4:'2.5 kOhm',
             5:'3 kOhm',6:'3.5 kOhm',7:'4 kOhm',8:'4.5 kOhm',9:'5 kOhm',10: '5.5 kOhm',11:'6 KOhm',12:'6.5 kOhm'
 		,13:'7 kOhm',14:'7.5 kOhm',15:'8 kOhm'}}; 
-    this.unused3 = {value:(sig>>5)&7,type:'unused'};
+    this.unused3 = {value:(sig>>6)&3,type:'unused'};
    	this.ePllCap={value:(sig>>4)&3, type:'select', options:{0:'30 pF',1:'40 pF',2:'50 pF',3:'70 pF'}}; 
    	this.ePllIcp={value:sig&0xf,type:'select',options:{0:'0 uA',1:'8.5 uA',2:'17 uA',3:'25.5 uA',4:'34 uA',5:'42.5 uA',
 						  6:'51 uA',7:'59.5 uA',8:'68 uA',9:'76.5 uA',10:'85 uA',11:'93.5 uA',
@@ -430,21 +430,21 @@ Reg40 : function(sig) {
 },
 Reg41 : function(sig) {
 	this.unused1 = {value:(sig>>21)&0x7ff,type:'unused'};
-    this.clk_disable_en = {value:(sig>>20)&1,type:'checkbox',checked:1,unchecked:0};
-    this.unused2 = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
-	this.prbs_mode = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
+    this.clk_disable_en = {value:(sig>>20)&1,type:'select',options:{0:'disable',1:'enable'}};
+    this.unused2 = {value:(sig>>19)&1,type:'unused'};
+	this.prbs_mode = {value:(sig>>18)&1,type:'select',options:{0:'disable',1:'enable'}};
 	this.encode_8b10b = {value:(sig>>17)&1,type:'select',options:{0:'no encoding',1:'8b10b encoding'}};
 	this.encode_cntl = {value:(sig>>16)&1,type:'select',options:{0:'Use pad',1:'Use register to control output encoding'}};
 	this.unused3 = {value:(sig>>15)&1,type:'unused'};
-	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0:'16',1:'1',2:'2',3:'4',4:'8'}};
+	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0b000:'16',0b110:'16',0b111:'16',0b101:'16',0b001:'1',0b010:'2',0b011:'4',0b100:'8'}};
 	this.unused4 = {value:(sig>>10)&3,type:'unused'};
-	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0:'Physics',1:'RegRead',2:'PackTrans',3:'FullTrans'}};
+	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0b00:'Physics',0b01:'RegRead',0b10:'PackTrans',0b11:'FullTrans'}};
 	this.unused5 = {value:(sig>>5)&7,type:'unused'};
 	this.readout_speed = {value:(sig>>4)&1,type:'select',options:{0:'320 MHz',1:'640 MHz'}};
 	this.unused6 = {value:(sig>>1)&7,type:'unused'};
 	this.trigger_mode= {value:sig&1,type:'select',options:{0:'Multilevel trigger',1:'Single level trigger'}};
-    this.clk_disable_en.text = "Clock Phase Disabled: " + ((this.clk_disable_en.value==this.clk_disable_en.checked)?'Yes':'No');
-	this.prbs_mode.text = "PRBS Mode: " + ((this.prbs_mode.value==this.prbs_mode.checked)?'Yes':'No');
+    this.clk_disable_en.text = "Clock Phase Disabled: " + this.clk_disable_en.options[this.clk_disable_en.value];
+	this.prbs_mode.text = "PRBS Mode: " + this.prbs_mode.options[this.prbs_mode.value];
 	this.encode_8b10b.text = "Encoding: " + this.encode_8b10b.options[this.encode_8b10b.value];
 	this.encode_cntl.text = "Encoding control: " + this.encode_cntl.options[this.encode_cntl.value];
 	this.max_Npacket.text = "Maximum number of ABC packets: " + this.max_Npacket.options[this.max_Npacket.value];
@@ -454,21 +454,21 @@ Reg41 : function(sig) {
 },
 Reg42 : function(sig) {
 	this.unused1 = {value:(sig>>21)&0x7ff,type:'unused'};
-    this.clk_disable_en = {value:(sig>>20)&1,type:'checkbox',checked:1,unchecked:0};
-    this.unused2 = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
-	this.prbs_mode = {value:(sig>>18)&1,type:'checkbox',checked:1,unchecked:0};
+    this.clk_disable_en = {value:(sig>>20)&1,type:'select',options:{0:'disable',1:'enable'}};
+    this.unused2 = {value:(sig>>19)&1,type:'unused'};
+	this.prbs_mode = {value:(sig>>18)&1,type:'select',options:{0:'disable',1:'enable'}};
 	this.encode_8b10b = {value:(sig>>17)&1,type:'select',options:{0:'no encoding',1:'8b10b encoding'}};
 	this.encode_cntl = {value:(sig>>16)&1,type:'select',options:{0:'Use pad',1:'Use register to control output encoding'}};
 	this.unused3 = {value:(sig>>15)&1,type:'unused'};
-	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0:'16',1:'1',2:'2',3:'4',4:'8'}};
+	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0b000:'16',0b110:'16',0b111:'16',0b101:'16',0b001:'1',0b010:'2',0b011:'4',0b100:'8'}};
 	this.unused4 = {value:(sig>>10)&3,type:'unused'};
-	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0:'Physics',1:'RegRead',2:'PackTrans',3:'FullTrans'}};
+	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0b00:'Physics',0b01:'RegRead',0b10:'PackTrans',0b11:'FullTrans'}};
 	this.unused5 = {value:(sig>>5)&7,type:'unused'};
 	this.readout_speed = {value:(sig>>4)&1,type:'select',options:{0:'320 MHz',1:'640 MHz'}};
 	this.unused6 = {value:(sig>>1)&7,type:'unused'};
 	this.trigger_mode= {value:sig&1,type:'select',options:{0:'Multilevel trigger',1:'Single level trigger'}};
-    this.clk_disable_en.text = "Clock Phase Disabled: " + ((this.clk_disable_en.value==this.clk_disable_en.checked)?'Yes':'No');
-	this.prbs_mode.text = "PRBS Mode: " + ((this.prbs_mode.value==this.prbs_mode.checked)?'Yes':'No');
+    this.clk_disable_en.text = "Clock Phase Disabled: " + this.clk_disable_en.options[this.clk_disable_en.value];
+	this.prbs_mode.text = "PRBS Mode: " + this.prbs_mode.options[this.prbs_mode.value];
 	this.encode_8b10b.text = "Encoding: " + this.encode_8b10b.options[this.encode_8b10b.value];
 	this.encode_cntl.text = "Encoding control: " + this.encode_cntl.options[this.encode_cntl.value];
 	this.max_Npacket.text = "Maximum number of ABC packets: " + this.max_Npacket.options[this.max_Npacket.value];
@@ -478,9 +478,9 @@ Reg42 : function(sig) {
 },
 Reg43 : function(sig) {
     this.unused1 = {value:(sig>>30)&3,type:'unused'};
-	this.clk_disable_sel = {value:(sig>>28)&0x1f,type:'select', options:{00:'40 MHz', 01:'Stave_clk (160MHz)', 10: 'clk160', 11: 'clk640'}};
+	this.clk_disable_sel = {value:(sig>>28)&0x1f,type:'select', options:{0b00:'40 MHz', 0b01:'Stave_clk (160MHz)', 0b10: 'clk160', 0b11: 'clk640'}};
     this.unused2 = {value:(sig>>26)&3,type:'unused'};
-    this.clk_disable = {value:(sig>>24)&0x1f,type:'select', options:{01:'A', 10: 'B', 11: 'C'}};
+    this.clk_disable = {value:(sig>>24)&0x1f,type:'select', options:{0b01:'A', 0b10: 'B', 0b11: 'C'}};
     this.unused3 = {value:(sig>>21)&7,type:'unused'};
 	this.efuse_prog_bit = {value:(sig>>16)&0x1f,type:'binput',n:5};
     this.unused4 = {value:(sig>>14)&3,type:'unused'};
