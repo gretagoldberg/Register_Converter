@@ -436,7 +436,7 @@ Reg41 : function(sig) {
 	this.encode_8b10b = {value:(sig>>17)&1,type:'select',options:{0:'no encoding',1:'8b10b encoding'}};
 	this.encode_cntl = {value:(sig>>16)&1,type:'select',options:{0:'Use pad',1:'Use register to control output encoding'}};
 	this.unused3 = {value:(sig>>15)&1,type:'unused'};
-	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0b000:'16',0b110:'16',0b111:'16',0b101:'16',0b001:'1',0b010:'2',0b011:'4',0b100:'8'}};
+	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0b000:'16',0b001:'1',0b010:'2',0b011:'4',0b100:'8'}};
 	this.unused4 = {value:(sig>>10)&3,type:'unused'};
 	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0b00:'Physics',0b01:'RegRead',0b10:'PackTrans',0b11:'FullTrans'}};
 	this.unused5 = {value:(sig>>5)&7,type:'unused'};
@@ -447,7 +447,7 @@ Reg41 : function(sig) {
 	this.prbs_mode.text = "PRBS Mode: " + this.prbs_mode.options[this.prbs_mode.value];
 	this.encode_8b10b.text = "Encoding: " + this.encode_8b10b.options[this.encode_8b10b.value];
 	this.encode_cntl.text = "Encoding control: " + this.encode_cntl.options[this.encode_cntl.value];
-	this.max_Npacket.text = "Maximum number of ABC packets: " + this.max_Npacket.options[this.max_Npacket.value];
+	this.max_Npacket.text = "Maximum number of ABC packets (If hex signal digit 5 is 5,6, or 7 replace with 0): " + this.max_Npacket.options[this.max_Npacket.value];
 	this.operating_mode.text = "Operating Mode: " + this.operating_mode.options[this.operating_mode.value];
 	this.readout_speed.text = "Readout Speed: " + this.readout_speed.options[this.readout_speed.value];
 	this.trigger_mode.text = "Trigger Mode: " + this.trigger_mode.options[this.trigger_mode.value];
@@ -460,7 +460,7 @@ Reg42 : function(sig) {
 	this.encode_8b10b = {value:(sig>>17)&1,type:'select',options:{0:'no encoding',1:'8b10b encoding'}};
 	this.encode_cntl = {value:(sig>>16)&1,type:'select',options:{0:'Use pad',1:'Use register to control output encoding'}};
 	this.unused3 = {value:(sig>>15)&1,type:'unused'};
-	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0b000:'16',0b110:'16',0b111:'16',0b101:'16',0b001:'1',0b010:'2',0b011:'4',0b100:'8'}};
+	this.max_Npacket = {value:(sig>>12)&7,type:'select',options:{0b000:'16',0b001:'1',0b010:'2',0b011:'4',0b100:'8'}};
 	this.unused4 = {value:(sig>>10)&3,type:'unused'};
 	this.operating_mode = {value:(sig>>8)&3,type:'select',options:{0b00:'Physics',0b01:'RegRead',0b10:'PackTrans',0b11:'FullTrans'}};
 	this.unused5 = {value:(sig>>5)&7,type:'unused'};
@@ -471,7 +471,7 @@ Reg42 : function(sig) {
 	this.prbs_mode.text = "PRBS Mode: " + this.prbs_mode.options[this.prbs_mode.value];
 	this.encode_8b10b.text = "Encoding: " + this.encode_8b10b.options[this.encode_8b10b.value];
 	this.encode_cntl.text = "Encoding control: " + this.encode_cntl.options[this.encode_cntl.value];
-	this.max_Npacket.text = "Maximum number of ABC packets: " + this.max_Npacket.options[this.max_Npacket.value];
+	this.max_Npacket.text = "Maximum number of ABC packets (If hex signal digit 5 is 5,6, or 7 replace with 0): " + this.max_Npacket.options[this.max_Npacket.value];
 	this.operating_mode.text = "Operating Mode: " + this.operating_mode.options[this.operating_mode.value];
 	this.readout_speed.text = "Readout Speed: " + this.readout_speed.options[this.readout_speed.value];
 	this.trigger_mode.text = "Trigger Mode: " + this.trigger_mode.options[this.trigger_mode.value];
