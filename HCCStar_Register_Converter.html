@@ -355,21 +355,19 @@ Reg35 : function(sig) {
     this.ePllPhase160MHz = {value:(sig>>24)&0x1f,type:'checkbox',checked:1,unchecked:0};
 	this.ePllEnablePhase = {value:(sig>>16)&0xff,type:'binput',n:8};
     this.unused2 = {value:(sig>>14)&3,type:'unused'};
-	this.ePllReferenceFrequency = {value:(sig>>12)&3,type:'select',options:{1:'40 MHz',2:'80 MHz',3:'160 MHz'}};
-   	this.ePllRes={value:(sig>>8)&0xf,type:'select',options:{0:'0.5 kOhm',1:'1 kOhm',2:'1.5 kOhm',3:'2 kOhm',4:'2.5 kOhm',
-            5:'3 kOhm',6:'3.5 kOhm',7:'4 kOhm',8:'4.5 kOhm',9:'5 kOhm',10: '5.5 kOhm',11:'6 KOhm',12:'6.5 kOhm'
-		,13:'7 kOhm',14:'7.5 kOhm',15:'8 kOhm'}}; 
+	this.ePllReferenceFrequency = {value:(sig>>12)&3,type:'select',options:{0b01:'40 MHz',0b10:'80 MHz',0b11:'160 MHz'}};
+   	this.ePllRes={value:(sig>>8)&0xf,type:'select',options:{0:'0.5 kOhm',1:'1 kOhm',2:'1.5 kOhm',3:'2 kOhm',4:'2.5 kOhm',5:'3 kOhm',
+	6:'3.5 kOhm',7:'4 kOhm',8:'4.5 kOhm',9:'5 kOhm',10: '5.5 kOhm',11:'6 KOhm',12:'6.5 kOhm',13:'7 kOhm',14:'7.5 kOhm',15:'8 kOhm'}}; 
     this.unused3 = {value:(sig>>6)&3,type:'unused'};
    	this.ePllCap={value:(sig>>4)&3, type:'select', options:{0:'30 pF',1:'40 pF',2:'50 pF',3:'70 pF'}}; 
-   	this.ePllIcp={value:sig&0xf,type:'select',options:{0:'0 uA',1:'8.5 uA',2:'17 uA',3:'25.5 uA',4:'34 uA',5:'42.5 uA',
-						  6:'51 uA',7:'59.5 uA',8:'68 uA',9:'76.5 uA',10:'85 uA',11:'93.5 uA',
-						  12:'102 uA',13:'110.5 uA',14:'119 uA',15:'127.5 uA'}};
+   	this.ePllIcp={value:sig&0xf,type:'select',options:{0:'0 uA',1:'8.5 uA',2:'17 uA',3:'25.5 uA',4:'34 uA',5:'42.5 uA',6:'51 uA',
+	7:'59.5 uA',8:'68 uA',9:'76.5 uA',10:'85 uA',11:'93.5 uA',12:'102 uA',13:'110.5 uA',14:'119 uA',15:'127.5 uA'}};
     this.ePllPhase160MHz.text = "Phase of clk160: " + (this.ePllPhase160MHz.checked?'Yes':'No');
-	this.ePllEnablePhase.text = "Enable specific phases: " + bin_string(this.EnPhase.value,8);
-	this.ePllReferenceFrequency.text = "ePLL Reference Frequency: " + this.RefF.options[this.RefF.value];
-	this.ePllRes.text = "ePLL Resistance: " + this.Res.options[this.Res.value];
-	this.ePllCap.text = "ePLL Loop Filter Capacitance: " + this.Cap.options[this.Cap.value];
-	this.ePllIcp.text = "ePLL Charge Pump Current: " + this.Icp.options[this.Icp.value];
+	this.ePllEnablePhase.text = "Enable specific phases: " + bin_string(this.ePllEnablePhase.value,8);
+	this.ePllReferenceFrequency.text = "ePLL Reference Frequency: " + this.ePllReferenceFrequency.options[this.ePllReferenceFrequency.value];
+	this.ePllRes.text = "ePLL Resistance: " + this.ePllRes.options[this.ePllRes.value];
+	this.ePllCap.text = "ePLL Loop Filter Capacitance: " + this.ePllCap.options[this.ePllCap.value];
+	this.ePllIcp.text = "ePLL Charge Pump Current: " + this.ePllIcp.options[this.ePllIcp.value];
 },
 Reg38 : function(sig) {
 	this.unused = {value:(sig>>28)&7,type:'unused'};
