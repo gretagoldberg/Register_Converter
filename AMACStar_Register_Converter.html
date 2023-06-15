@@ -138,12 +138,12 @@ Reg0 : function(sig) {
 	this.Hx0_en.text = "X0 LDO: " + this.Hx0_en.options[this.Hx0_en.value];  
 	this.I.text = "GPI: " + this.I.options[this.I.value];
 	this.PG.text = "Power Good: " + this.PG.options[this.PG.value];
-	this.warnIlock.text = "WARN: " + this.warnIlock.options[this.warnIlock.value];
-	this.DCDCIlock.text = "DCDC: " + this.DCDCIlock.options[this.DCDCIlock.value];
-	this.HV2Ilock.text = "HV2: " + this.HV2Ilock.options[this.HV2Ilock.value];
-	this.HV0Ilock.text = "HV0: " + this.HV0Ilock.options[this.HV0Ilock.value];
-	this.YldoIlock.text = "Y LDO: " + this.YldoIlock.options[this.YldoIlock.value];
-	this.XldoIlock.text = "X LDO: " + this.XldoIlock.options[this.XldoIlock.value];
+	this.warnIlock.text = "WARN Interlock: " + this.warnIlock.options[this.warnIlock.value];
+	this.DCDCIlock.text = "DCDC Interlock: " + this.DCDCIlock.options[this.DCDCIlock.value];
+	this.HV2Ilock.text = "HV2 Interlock: " + this.HV2Ilock.options[this.HV2Ilock.value];
+	this.HV0Ilock.text = "HV0 Interlock: " + this.HV0Ilock.options[this.HV0Ilock.value];
+	this.YldoIlock.text = "Y LDO Interlock: " + this.YldoIlock.options[this.YldoIlock.value];
+	this.XldoIlock.text = "X LDO Interlock: " + this.XldoIlock.options[this.XldoIlock.value];
 },
 Reg1 : function(sig) {
 	this.unused1 = {value:(sig>>30)&3,type:'unused'};
