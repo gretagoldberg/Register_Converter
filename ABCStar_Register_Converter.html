@@ -45,15 +45,15 @@ var defaults = {
 //Register Descriptions
 var RegDesc =  ["Register(s):Description",
 		"0:Special (RW)",
-		"1-4,6-7:Analog and DCS (RW)",
+		"1-3:Analog and DCS (RW)",
 		"16-23:Input (Mask) (RW)",
-		"32-38:Configuration (RW)",
-		"48-52:Status (RO)",
+		"32-47:Configuration (RW)",
+		"48-62:Status (RO)",
 		"63: High priority (RO)",
 		"64-95:TrimDAC 4 LSBs (RW)",
 		"96-103:TrimDac MSBs (RW)",
 		"104-111:Calibration Pulse Enables (RW)",
-		"112-175:Hit Counts (RO)" 
+		"128-191:Hit Counts (RO)" 
 		];
 
 window.onload = function() {
@@ -104,11 +104,11 @@ var Registers = {
 		this.bvref = {value:sig&0x1f,type:'input'};
         this.DIS_CLKS.text = "Disable one of the 7 clocks: " + this.DIS_CLKS.options[this.DIS_CLKS.value];
         this.LCB_SelfResetEnable.text = "Reset the LCB decoder: " + this.LCB_SelfResetEnable.options[this.LCB_SelfResetEnable.value];
-        this.bvt.text = "Discriminator voltage (0V to -590mV, step of 2.3mV): " + (-1.0*this.bvt.value*2.3) + 'mV'; 
-		this.btrange.text = "Bit trim DAC range: " + this.btrange.value;
-		this.b8bref.text = "Internal bias for 8-bit threshold and calibration DACs: " + (this.b8bref.value==13)?'50 mV':(this.b8bref.value);
-		this.biref.text = "Internal bias for bias current generators: " + (this.biref.value==13)?'50 mV':(this.biref.value);
-		this.bvref.text = "Internal bias for VCS,VCD,VCSP,VBASE,VP: " + (this.bvref.value==13)?'50 mV':(this.bvref.value); 
+        this.bvt.text = "Discriminator voltage (BVT) (0V to -590mV, step of 2.3mV): " + (-1.0*this.bvt.value*2.3) + 'mV'; 
+		this.btrange.text = "Trim DAC range: " + this.btrange.value;
+		this.b8bref.text = "Internal bias for 8-bit threshold and calibration DACs: " + (this.b8bref.value==13)?'B8BREF':(this.b8bref.value);
+		this.biref.text = "Internal bias for bias current generators: " + (this.biref.value==13)?'BIREF':(this.biref.value);
+		this.bvref.text = "Internal bias for VCS,VCD,VCSP,VBASE,VP: " + (this.bvref.value==13)?'BVREF':(this.bvref.value); 
 	},
 	Reg2: function(sig) {
         this.ringOscRadMonitoring_enable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
@@ -131,15 +131,15 @@ var Registers = {
         */
         this.ringOscRadMonitoring_enable.text = "Enable the radiation monitoring ring oscillator circuit: " + this.ringOscRadMonitoring_enable.options[this.ringOscRadMonitoring_enable.value];
         this.enGlitchFilter_40MADC.text = "Enable glitch filter. Caution: the 40MHz clock phase will change with regards to the 160M inside the chip: " + this.enGlitchFilter_40MADC.options[this.enGlitchFilter_40MADC.value];
-        this.enGlitchFilter_40MV.text = "Enable glitch filter. Caution: the 40MHz clock phase will change with regards to the 160M inside the chip: " + this.enGlitchFilter_40MV.options[this.enGlitchFilter_40MV.value];
-        this.enGlitchFilter_40MC.text = "Enable glitch filter. Caution: the 40MHz clock phase will change with regards to the 160M inside the chip: " + this.enGlitchFilter_40MC.options[this.enGlitchFilter_40MC.value];
-        this.enGlitchFilter_40MB.text = "Enable glitch filter. Caution: the 40MHz clock phase will change with regards to the 160M inside the chip: " + this.enGlitchFilter_40MB.options[this.enGlitchFilter_40MB.value];
-        this.enGlitchFilter_40MA.text = "Enable glitch filter. Caution: the 40MHz clock phase will change with regards to the 160M inside the chip: " + this.enGlitchFilter_40MA.options[this.enGlitchFilter_40MA.value];
-        this.bcal.text = "Calibration DAC voltage (0-150mV, step 0.586 mV): " + this.bcal.value*0.586 + 'mV';
+        this.enGlitchFilter_40MV.text = "Enable glitch filter: " + this.enGlitchFilter_40MV.options[this.enGlitchFilter_40MV.value];
+        this.enGlitchFilter_40MC.text = "Enable glitch filter: " + this.enGlitchFilter_40MC.options[this.enGlitchFilter_40MC.value];
+        this.enGlitchFilter_40MB.text = "Enable glitch filter: " + this.enGlitchFilter_40MB.options[this.enGlitchFilter_40MB.value];
+        this.enGlitchFilter_40MA.text = "Enable glitch filter: " + this.enGlitchFilter_40MA.options[this.enGlitchFilter_40MA.value];
+        this.bcal.text = "Calibration DAC voltage (BCAL) (0-150mV, step 0.586 mV): " + this.bcal.value*0.586 + 'mV';
         this.combias.text = "Comparator bias current (0=5uA,16=9uA,31=13uA): " + (this.combias.value*0.25+5) + 'uA';
         this.str_del.text = "Calibration strobe delay: " + this.str_del.value;
         this.str_del_r.text = "Calibration strobe delay range: " + this.str_del_r.options[this.str_del_r.value];
-        this.IDLEPATTERN.text = "Add transitions on the 160Mpbs data output line: " + bin_string(this.IDLEPATTERN.value,4);
+        this.IDLEPATTERN.text = "Idle Pattern: " + bin_string(this.IDLEPATTERN.value,4);
         /*
 		this.bipre.text = "IPRE bias current (0=80uA,16=110uA,31=140uA): " + (this.bipre.value*(30.0/16.0)+80) + ' uA';
 		this.bifeed.text = "IFEED bias current (0=160nA,9=300nA,31=600nA): " + (this.bifeed.value*(140.0/9.0)+160) + 'nA';
@@ -152,7 +152,7 @@ var Registers = {
         this.D_LOW = {value:(sig>>26)&1,type:'checkbox',checked:1,unchecked:0};
         this.d_s = {value:(sig>>21)&0x1f,type:'input'};
         this.a_en_ctrl = {value:(sig>>20)&1,type:'select',options:{0:'maximum voltage',1:'enable tuning'}};
-        this.A_LOW = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0}
+        this.A_LOW = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
         this.a_s = {value:(sig>>14)&0x1f,type:'input'};
         this.btmux_d = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.btmux = {value:(sig>>9)&0xf,type:'input'};
@@ -161,13 +161,13 @@ var Registers = {
 		this.ADC_ch2 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch1 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch0 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-        this.ADC_bias = {value:sig&0xf,type:'input'};
-        this.EN_out_decoder = "Configures the flagBit in the 68-bit packets: " + bin_string(this.EN_out_decoder.value,16);
+        this.ADC_bias = {value:(sig>>0)&0xf,type:'input'};
+        this.EN_out_decoder.text = "Configures the flagBit in the 68-bit packets: " + bin_string(this.EN_out_decoder.value,16);
         this.d_en_ctrl.text = "Regulator D output control: " + this.d_en_ctrl.options[this.d_en_ctrl.value];
-        this.D_LOW = "Lower the output voltage of the analog LDO" + ((this.D_LOW.value==this.D_LOW.checked)?'Yes':'No');
+        this.D_LOW.text = "Lower the output voltage of the analog LDO " + ((this.D_LOW.value==this.D_LOW.checked)?'Yes':'No');
         this.d_s.text = "Regulator D output voltage: " + this.d_s.value;
         this.a_en_ctrl.text = "Regulator A output control: " + this.a_en_ctrl.options[this.a_en_ctrl.value];
-        this.A_LOW = "Lower the output voltage of the analog LDO" + ((this.A_LOW.value==this.A_LOW.checked)?'Yes':'No');
+        this.A_LOW.text = "Lower the output voltage of the analog LDO " + ((this.A_LOW.value==this.A_LOW.checked)?'Yes':'No');
         this.a_s.text = "Regulator A output voltage: " + this.a_s.value;
         this.btmux_d.text = "MUX output: " + this.btmux_d.options[this.btmux_d.value];
 		this.btmux.text = "MUX output voltage: " + this.btmux.value;
@@ -247,7 +247,7 @@ var Registers = {
 	Reg32: function(sig) {
         this.Latency = {value:(sig>>23)&0x1ff,type:'input'};
         this.CalPulsePolarity = {value:(sig>>22)&1,type:'binput',n:1};
-        this.CalPulseEn = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+        this.CalPulseEnable = {value:(sig>>21)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.CurrDriv = {value:(sig>>18)&7,type:'input'};
         this.TestPatt2 = {value:(sig>>14)&0xf,type:'binput',n:4};
 		this.TestPatt1 = {value:(sig>>10)&0xf,type:'binput',n:4};
@@ -258,10 +258,10 @@ var Registers = {
 		this.PREn = {value:(sig>>3)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.MaskHPR = {value:(sig>>2)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.EnCount = {value:(sig>>1)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.TestPulseEn = {value:(sig&1),type:'select',options:{0:'disabled',1:'enabled'}};
+		this.TestPulseEn = {value:(sig>>0)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.Latency.text = "Latency in L0 pipeline in number of BC clocks: " + this.Latency.value;
-        this.CalPulsePolarity.text = "16BC wide calibration pulse polarity: " + this.CalPulsePolarity.value;
-        this.CalPulseEn.text = "Analog pulse functions at channel inputs: " + this.CalPulseEn.options[this.CalPulseEn.value];
+        this.CalPulsePolarity.text = "Calibration pulse polarity: " + this.CalPulsePolarity.value;
+        this.CalPulseEnable.text = "Analog pulse functions at channel inputs: " + this.CalPulseEnable.options[this.CalPulseEnable.value];
         this.CurrDriv.text = "Current Drive of DAT outputs: " + this.CurrDriv.value;
         this.tm.text = "Test Mode: " + this.tm.options[this.tm.value];
 		this.LPEn.text = "LP Triggers data transmission: " + this.LPEn.options[this.LPEn.value];
@@ -270,18 +270,19 @@ var Registers = {
 		this.EnCount.text = "Counters at the end of the L0Buffer: " + this.EnCount.options[this.EnCount.value];
 		this.MaskHPR.text = "Enable preventing HPR packets from being transmitted when the LCB link status changes: " + this.MaskHPR.options[this.MaskHPR.value];
 		this.TestPattEn.text = "Test pulse pattern editing: " + this.TestPattEn.options[this.TestPattEn.value];
-		this.TestPatt1.text = "Unmask channels test pulse pattern: " + bin_string(this.TestPatt1.value,4);
-		this.TestPatt2.text = "Mask channels test pulse pattern: " + bin_string(this.TestPatt2.value,4);
+		this.TestPatt2.text = "Unmask channels test pulse pattern: " + bin_string(this.TestPatt1.value,4);
+		this.TestPatt1.text = "Masked channels test pulse pattern: " + bin_string(this.TestPatt2.value,4);
 	},
 	Reg33: function(sig) {
 		this.ReadoutTimeoutEnable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.LCB_ErrCount_Thr = {value:(sig>>23)&0xff,type:'input'};
         this.DIS_CLKS_EN = {value:(sig>>22)&1, type:'select',options:{0:'disabled',1:'enabled'}};
+		this.V0ReadoutMode = {value:(sig>>21)&1, type:'select',options:{0:'disabled',1:'enabled'}};
         this.DoFuse = {value:(sig>>16)&0x1f,type:'binput',n:24};
         this.MCEn = {value:(sig>>15)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.MC = {value:(sig>>9)&0x3f,type:'input'};
         this.DetMode = {value:(sig>>7)&3,type:'select',options:{0:'Hit',1:'Level',2:'Edge',3:'Clear'}};
-        this.DTESTOUTSEL = {value:(sig&0x7f),type:'binput',n:7};
+        this.DTESTOUTSEL = {value:(sig>>0)&0x7f,type:'binput',n:7};
         this.ReadoutTimeoutEnable.text = "Reset on the packet building block: " + this.ReadoutTimeoutEnable.options[this.ReadoutTimeoutEnable.value];
         this.DIS_CLKS_EN.text = "Enable the possbility to disable clocks: " + this.DIS_CLKS_EN.options[this.DIS_CLKS_EN.value];
         this.V0ReadoutMode.text = "Enable to modify the packet format to be compatible with V0 mode: " + this.V0ReadoutMode.options[this.V0ReadoutMode.value];
@@ -292,6 +293,7 @@ var Registers = {
         this.DetMode.text = "Detection mode: " + this.DetMode.options[this.DetMode.value];
         this.DTESTOUTSEL.text = "Monitor internal signals: " + bin_string(this.DTESTOUTSEL.value,7);
 	},
+
     /*
 	Reg34: function(sig) {
 		this.BCoffset = {value:(sig>>24)&0xff,type:'input'};
@@ -370,9 +372,9 @@ var Registers = {
         this.ADCS3SEU = {value:(sig>>5)&1,type:'binput',n:1};
         this.ADCS2SEU = {value:(sig>>8)&1,type:'binput',n:1};
 		this.ADCS1SEU = {value:(sig>>7)&1,type:'binput',n:1};
-        this.unused2 = {value:(sig>>2)&1,type:'unused'};
+        this.unused2 = {value:(sig>>2)&0x3f,type:'unused'};
         this.CFG1SEU = {value:(sig>>1)&1,type:'binput',n:1};
-		this.CFG0SEU = {value:sig&1,type:'binput',n:1};	
+		this.CFG0SEU = {value:(sig>>0)&1,type:'binput',n:1};	
 		/*
         this.ADCS7SEU = {value:(sig>>12)&1,type:'binput',n:1};
 		this.ADCS6SEU = {value:(sig>>11)&1,type:'binput',n:1};
@@ -389,7 +391,7 @@ var Registers = {
         this.HPRStateSEU.text = "HPRStateSEU: " + bin_string(this.HPRStateSEU.value,1);
         this.TopLSEU.text = "TopLSEU: " + bin_string(this.TopLSEU.value,1);
         this.SCReg.text = "SCRegSEU: " + bin_string(this.SCReg.value,1);
-        this.CR437EU.text = "CR47SEU: " + bin_string(this.CR47SEU.value,1);
+        this.CR47SEU.text = "CR47SEU: " + bin_string(this.CR47SEU.value,1);
 		this.CR43SEU.text = "CR43SEU: " + bin_string(this.CR43SEU.value,1);	
 		this.CR39SEU.text = "CR39SEU: " + bin_string(this.CR39SEU.value,1);	
 		this.CR35SEU.text = "CR35SEU: " + bin_string(this.CR35SEU.value,1);
@@ -426,7 +428,8 @@ var Registers = {
 		this.unused = {value:(sig>>29)&7,type:'unused'};
         this.PRFIFO_OverFlow = {value:(sig>>28)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.PRFIFO_Full = {value:(sig>>27)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-		this.PRFIFO_Empt = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.PRFIFO_AlmostFull = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}};
+		this.PRFIFO_Empt = {value:(sig>>25)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.LPFIFO_OverFlow = {value:(sig>>24)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.LPFIFO_Full = {value:(sig>>23)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.LPFIFO_AlmostFull = {value:(sig>>22)&1,type:'select',options:{0:'disabled',1:'enabled'}};
@@ -444,34 +447,37 @@ var Registers = {
         this.EvtIDLatchSEU = {value:(sig>>10)&1,type:'binput',n:1};
         this.L0SEU = {value:(sig>>9)&1,type:'binput',n:1};
         this.PktBldSEU = {value:(sig>>8)&1,type:'binput',n:1};
-        this.unused1 = {value:(sig>>4)&0x1f,type:'unused'};
-        this.unused2 = {value:(sig&0xf),type:'unused'};
+        this.PR_Bad = {value:(sig>>4)&0x1f,type:'input'};
+        this.LP_Bad = {value:(sig&0xf),type:'input'};
         /*
         this.Ser = {value:(sig>>4)&1,type:'binput',n:1};
 		this.HPR = {value:(sig>>3)&1,type:'binput',n:1};
 		this.TopL = {value:(sig>>2)&1,type:'binput',n:1};
 		this.CR47 = {value:sig&1,type:'binput',n:1};
         */
-        this.PRFIFO_OverFlow.text = "PRFIFO_OverFlow contribution to flag bit sum: " + this.PRFIFO_Full.options[this.PRFIFO_OverFlow.value];
-        this.PRFIFO_Full.text = "PRFIFO_Full contribution to flag bit sum: " + this.PRFIFO_Full.options[this.PRFIFO_Full.value];
-		this.PRFIFO_Empt.text = "PRFIFO_Empt contribution to flag bit sum: " + this.PRFIFO_Empt.options[this.PRFIFO_Empt.value];
-		this.LPFIFO_OverFlow.text = "LPFIF0_OverFlow contribution to flag bit sum: " + this.LPFIFO_OverFlow.options[this.LPFIFO_OverFlow.value];
-        this.LPFIFO_Full.text = "LPFIFO_Full contribution to flag bit sum: " + this.LPFIFO_Full.options[this.LPFIFO_Full.value];
-		this.LPFIFO_AlmostFull.text = "LPFIFO_AlmostFull contribution to flag bit sum: " + this.LPFIFO_AlmostFull.options[this.LPFIFO_AlmostFull.value];
-        this.LPFIFO_Empt.text = "LPFIFO_Empt contribution to flag bit sum: " + this.LPFIFO_Empt.options[this.LPFIFO_Empt.value];
-        this.L0HoldFifoOverFlow.text = "L0HoldFifoOverFlow contribution to flag bit sum: " + this.L0HoldFifoOverFlow.options[this.L0HoldFifoOverFlow.value];
-        this.L0HoldFifoEmpty.text = "L0HoldFifoEmpty contribution to flag bit sum: " + this.L0HoldFifoEmpty.options[this.L0HoldFifoEmpty.value];
-        this.ClusterFifoOverflow.text = "ClusterFifoOverflow contribution to flag bit sum: " + this.ClusterFifoOverflow.options[this.ClusterFifoOverflow.value];
-        this.ClusterFifoFull.text = "ClusterFifoFull contribution to flag bit sum: " + this.ClusterFifoFull.options[this.ClusterFifoFull.value];
-        this.ClusterFifoAlmostFull.text = "ClusterFifoAlmostFull contribution to flag bit sum: " + this.ClusterFifoAlmostFull.options[this.ClusterFifoAlmostFull.value];
-        this.ClusterFifoEmpty.text = "ClusterFifoEmpty contribution to flag bit sum: " + this.ClusterFifoEmpty.options[this.ClusterFifoEmpty.value];
-        this.HPRFifoOverflow.text = "HPRFifoOverflow contribution to flag bit sum: " + this.HPRFifoOverflow.options[this.HPRFifoOverflow.value];
-        this.HPRFifoFull.text = "HPRFifoFull contribution to flag bit sum: " + this.HPRFifoFull.options[this.HPRFifoFull.value];
-        this.HPRFifoAlmostFull.text = "HPRFifoAlmostFull contribution to flag bit sum: " + this.HPRFifoAlmostFull.options[this.HPRFifoAlmostFull.value];
-        this.HPRFifoEmpty.text = "HPRFifoEmpty contribution to flag bit sum: " + this.HPRFifoEmpty.options[this.HPRFifoEmpty.value];
+        this.PRFIFO_OverFlow.text = "PRFIFO_OverFlow: " + this.PRFIFO_Full.options[this.PRFIFO_OverFlow.value];
+        this.PRFIFO_Full.text = "PRFIFO_Full: " + this.PRFIFO_Full.options[this.PRFIFO_Full.value];
+		this.PRFIFO_AlmostFull.text = "PRFIFO_AlmostFull: " + this.PRFIFO_AlmostFull.options[this.PRFIFO_AlmostFull.value];
+		this.PRFIFO_Empt.text = "PRFIFO_Empt: " + this.PRFIFO_Empt.options[this.PRFIFO_Empt.value];
+		this.LPFIFO_OverFlow.text = "LPFIF0_OverFlow: " + this.LPFIFO_OverFlow.options[this.LPFIFO_OverFlow.value];
+        this.LPFIFO_Full.text = "LPFIFO_Full: " + this.LPFIFO_Full.options[this.LPFIFO_Full.value];
+		this.LPFIFO_AlmostFull.text = "LPFIFO_AlmostFull: " + this.LPFIFO_AlmostFull.options[this.LPFIFO_AlmostFull.value];
+        this.LPFIFO_Empt.text = "LPFIFO_Empt: " + this.LPFIFO_Empt.options[this.LPFIFO_Empt.value];
+        this.L0HoldFifoOverFlow.text = "L0HoldFifoOverFlow: " + this.L0HoldFifoOverFlow.options[this.L0HoldFifoOverFlow.value];
+        this.L0HoldFifoEmpty.text = "L0HoldFifoEmpty: " + this.L0HoldFifoEmpty.options[this.L0HoldFifoEmpty.value];
+        this.ClusterFifoOverflow.text = "ClusterFifoOverflow: " + this.ClusterFifoOverflow.options[this.ClusterFifoOverflow.value];
+        this.ClusterFifoFull.text = "ClusterFifoFull: " + this.ClusterFifoFull.options[this.ClusterFifoFull.value];
+        this.ClusterFifoAlmostFull.text = "ClusterFifoAlmostFull: " + this.ClusterFifoAlmostFull.options[this.ClusterFifoAlmostFull.value];
+        this.ClusterFifoEmpty.text = "ClusterFifoEmpty: " + this.ClusterFifoEmpty.options[this.ClusterFifoEmpty.value];
+        this.HPRFifoOverflow.text = "HPRFifoOverflow: " + this.HPRFifoOverflow.options[this.HPRFifoOverflow.value];
+        this.HPRFifoFull.text = "HPRFifoFull: " + this.HPRFifoFull.options[this.HPRFifoFull.value];
+        this.HPRFifoAlmostFull.text = "HPRFifoAlmostFull: " + this.HPRFifoAlmostFull.options[this.HPRFifoAlmostFull.value];
+        this.HPRFifoEmpty.text = "HPRFifoEmpty: " + this.HPRFifoEmpty.options[this.HPRFifoEmpty.value];
         this.EvtIDLatchSEU.text = "EvtIDLatchSEU: " + bin_string(this.EvtIDLatchSEU.value,1);
         this.L0SEU.text = "L0SEU: " + bin_string(this.L0SEU.value,1);
         this.PktBldSEU.text = "PktBldSEU: " + bin_string(this.PktBldSEU.value,1);
+		this.PR_Bad = "Counter value: " +  this.PR_Bad.value;
+		this.LP_Bad = "Counter value: " +  this.LP_Bad.value;
         /*
         this.Ser.text = "SerSEU: " + bin_string(this.Ser.value,1);
 		this.HPR.text = "HPR_SEU: " + bin_string(this.HPR.value,1);
@@ -480,8 +486,9 @@ var Registers = {
         */
 	},
 	Reg50 : function(sig) {
-        this.unused = {value:(sig>>24)&0xff,type:'unused'};
+        this.ABCSTARVER = {value:(sig>>24)&0xff,type:'input'};
 		this.eFuse = {value:(sig&0xffffff),type:'binput',n:24};
+		this.ABCSTARVER.text = "Static identifier: " + this.ABCSTARVER.value;
 		this.eFuse.text = "eFuse (23-0): " + bin_string(this.eFuse.value,24);
 
 	},
@@ -502,10 +509,10 @@ var Registers = {
 		this.ADC_ch0 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_bias = {value:sig&0xf,type:'input'};
         this.K2_pending.text = "Pending K2 Slow Command Command: " + ((this.K2_pending.value==this.K2_pending.checked)?'Yes':'No');
-		this.RegFIFO_ovfl.text = "RegFIFO_ovfl contribution to flag bit sum: " + this.RegFIFO_ovfl.options[this.RegFIFO_ovfl.value];
-		this.RegFIFO_full.text = "RegFIFO_full contribution to flag bit sum: " + this.RegFIFO_full.options[this.RegFIFO_full.value];
-        this.RegFIFO_almostfull.text = "RegFIFO_almostfull contribution to flag bit sum: " + this.RegFIFO_full.options[this.RegFIFO_full];
-		this.RegFIFO_empt.text = "RegFIFO_empt contribution to flag bit sum: " + this.RegFIFO_empt.options[this.RegFIFO_empt.value];
+		this.RegFIFO_ovfl.text = "RegFIFO_ovfl: " + this.RegFIFO_ovfl.options[this.RegFIFO_ovfl.value];
+		this.RegFIFO_full.text = "RegFIFO_full: " + this.RegFIFO_full.options[this.RegFIFO_full.value];
+        this.RegFIFO_almostfull.text = "RegFIFO_almostfull: " + this.RegFIFO_full.options[this.RegFIFO_full];
+		this.RegFIFO_empt.text = "RegFIFO_empt: " + this.RegFIFO_empt.options[this.RegFIFO_empt.value];
         this.ADCMeasurementReady.text = "New ADC sample is ready: " + this.ADCMeasurementReady.options[this.ADCMeasurementReady.value];
         this.ADC_dat.text = "ADC data: " + this.ADC_dat.value;
         this.btmux_d.text = "MUX output: " + this.btmux_d.options[this.btmux_d.value];
@@ -2193,6 +2200,7 @@ var Registers = {
 		this.cal_en_ch1.text = "Calibration Pulse Ch 225: " + this.cal_en_ch1.value;
 		this.cal_en_ch0.text = "Calibration Pulse Ch 224: " + this.cal_en_ch0.value;
 	},
+	/*
 	Reg112 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
@@ -2353,7 +2361,169 @@ var Registers = {
 		this.ch1.text = "Ch61 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch60 Hit Count: " + this.ch0.value;
 	},
+	*/
 	Reg128 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch3 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch2 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch1 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch0 Hit Count: " + this.ch0.value;
+	},
+	Reg129 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch7 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch6 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch5 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch4 Hit Count: " + this.ch0.value;
+	},
+	Reg130 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch11 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch10 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch9 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch8 Hit Count: " + this.ch0.value;
+	},
+	Reg131 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch15 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch14 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch13 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch12 Hit Count: " + this.ch0.value;
+	},
+	Reg132 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch19 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch18 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch17 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch16 Hit Count: " + this.ch0.value;
+	},
+	Reg133 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch23 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch22 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch21 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch20 Hit Count: " + this.ch0.value;
+	},
+	Reg134 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch27 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch26 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch25 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch24 Hit Count: " + this.ch0.value;
+	},
+	Reg135 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch31 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch30 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch29 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch28 Hit Count: " + this.ch0.value;
+	},
+	Reg136 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch35 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch34 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch33 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch32 Hit Count: " + this.ch0.value;
+	},
+	Reg137 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch39 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch38 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch37 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch36 Hit Count: " + this.ch0.value;
+	},
+	Reg138 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch43 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch42 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch41 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch40 Hit Count: " + this.ch0.value;
+	},
+	Reg139 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch47 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch46 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch45 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch44 Hit Count: " + this.ch0.value;
+	},
+	Reg140 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch51 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch50 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch49 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch48 Hit Count: " + this.ch0.value;
+	},
+	Reg141 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch55 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch54 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch53 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch52 Hit Count: " + this.ch0.value;
+	},
+	Reg142 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch59 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch58 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch57 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch56 Hit Count: " + this.ch0.value;
+	},
+	Reg143 : function(sig) {
+		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
+		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
+		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
+		this.ch0 = {value:sig&0xff,type:'input'};
+		this.ch3.text = "Ch63 Hit Count: "+ this.ch3.value;
+		this.ch2.text = "Ch62 Hit count: " + this.ch2.value;
+		this.ch1.text = "Ch61 Hit Count: " + this.ch1.value;
+		this.ch0.text = "Ch60 Hit Count: " + this.ch0.value;
+	},
+
+	Reg144 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2363,7 +2533,7 @@ var Registers = {
 		this.ch1.text = "Ch65 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch64 Hit Count: " + this.ch0.value;
 	},
-	Reg129 : function(sig) {
+	Reg145 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2373,7 +2543,7 @@ var Registers = {
 		this.ch1.text = "Ch69 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch68 Hit Count: " + this.ch0.value;
 	},
-	Reg130 : function(sig) {
+	Reg146 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2383,7 +2553,7 @@ var Registers = {
 		this.ch1.text = "Ch73 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch72 Hit Count: " + this.ch0.value;
 	},
-	Reg131 : function(sig) {
+	Reg147 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2393,7 +2563,7 @@ var Registers = {
 		this.ch1.text = "Ch77 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch76 Hit Count: " + this.ch0.value;
 	},
-	Reg132 : function(sig) {
+	Reg148 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2403,7 +2573,7 @@ var Registers = {
 		this.ch1.text = "Ch81 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch80 Hit Count: " + this.ch0.value;
 	},
-	Reg133 : function(sig) {
+	Reg149 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2413,7 +2583,7 @@ var Registers = {
 		this.ch1.text = "Ch85 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch84 Hit Count: " + this.ch0.value;
 	},
-	Reg134 : function(sig) {
+	Reg150 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2423,7 +2593,7 @@ var Registers = {
 		this.ch1.text = "Ch89 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch88 Hit Count: " + this.ch0.value;
 	},
-	Reg135 : function(sig) {
+	Reg151 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2433,7 +2603,7 @@ var Registers = {
 		this.ch1.text = "Ch93 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch92 Hit Count: " + this.ch0.value;
 	},
-	Reg136 : function(sig) {
+	Reg152 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2443,7 +2613,7 @@ var Registers = {
 		this.ch1.text = "Ch97 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch96 Hit Count: " + this.ch0.value;
 	},
-	Reg137 : function(sig) {
+	Reg153 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2453,7 +2623,7 @@ var Registers = {
 		this.ch1.text = "Ch101 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch100 Hit Count: " + this.ch0.value;
 	},
-	Reg138 : function(sig) {
+	Reg154 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2463,7 +2633,7 @@ var Registers = {
 		this.ch1.text = "Ch105 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch104 Hit Count: " + this.ch0.value;
 	},
-	Reg139 : function(sig) {
+	Reg155 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2473,7 +2643,7 @@ var Registers = {
 		this.ch1.text = "Ch109 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch108 Hit Count: " + this.ch0.value;
 	},
-	Reg140 : function(sig) {
+	Reg156 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2483,7 +2653,7 @@ var Registers = {
 		this.ch1.text = "Ch113 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch112 Hit Count: " + this.ch0.value;
 	},
-	Reg141 : function(sig) {
+	Reg157 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2493,7 +2663,7 @@ var Registers = {
 		this.ch1.text = "Ch117 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch116 Hit Count: " + this.ch0.value;
 	},
-	Reg142 : function(sig) {
+	Reg158 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2503,7 +2673,7 @@ var Registers = {
 		this.ch1.text = "Ch121 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch120 Hit Count: " + this.ch0.value;
 	},
-	Reg143 : function(sig) {
+	Reg159 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2513,7 +2683,7 @@ var Registers = {
 		this.ch1.text = "Ch125 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch124 Hit Count: " + this.ch0.value;
 	},
-	Reg144 : function(sig) {
+	Reg160 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2523,7 +2693,7 @@ var Registers = {
 		this.ch1.text = "Ch129 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch128 Hit Count: " + this.ch0.value;
 	},
-	Reg145 : function(sig) {
+	Reg161 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2533,7 +2703,7 @@ var Registers = {
 		this.ch1.text = "Ch133 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch132 Hit Count: " + this.ch0.value;
 	},
-	Reg146 : function(sig) {
+	Reg162 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2543,7 +2713,7 @@ var Registers = {
 		this.ch1.text = "Ch137 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch136 Hit Count: " + this.ch0.value;
 	},
-	Reg147 : function(sig) {
+	Reg163 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2553,7 +2723,7 @@ var Registers = {
 		this.ch1.text = "Ch141 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch140 Hit Count: " + this.ch0.value;
 	},
-	Reg148 : function(sig) {
+	Reg164 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2563,7 +2733,7 @@ var Registers = {
 		this.ch1.text = "Ch145 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch144 Hit Count: " + this.ch0.value;
 	},
-	Reg149 : function(sig) {
+	Reg165 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2573,7 +2743,7 @@ var Registers = {
 		this.ch1.text = "Ch149 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch148 Hit Count: " + this.ch0.value;
 	},
-	Reg150 : function(sig) {
+	Reg166 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2583,7 +2753,7 @@ var Registers = {
 		this.ch1.text = "Ch153 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch152 Hit Count: " + this.ch0.value;
 	},
-	Reg151 : function(sig) {
+	Reg167 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2593,7 +2763,7 @@ var Registers = {
 		this.ch1.text = "Ch157 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch156 Hit Count: " + this.ch0.value;
 	},
-	Reg152 : function(sig) {
+	Reg168 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2603,7 +2773,7 @@ var Registers = {
 		this.ch1.text = "Ch161 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch160 Hit Count: " + this.ch0.value;
 	},
-	Reg153 : function(sig) {
+	Reg169 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2613,7 +2783,7 @@ var Registers = {
 		this.ch1.text = "Ch165 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch164 Hit Count: " + this.ch0.value;
 	},
-	Reg154 : function(sig) {
+	Reg170 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2623,7 +2793,7 @@ var Registers = {
 		this.ch1.text = "Ch169 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch168 Hit Count: " + this.ch0.value;
 	},
-	Reg155 : function(sig) {
+	Reg171 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2633,7 +2803,7 @@ var Registers = {
 		this.ch1.text = "Ch173 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch172 Hit Count: " + this.ch0.value;
 	},
-	Reg156 : function(sig) {
+	Reg172 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2643,7 +2813,7 @@ var Registers = {
 		this.ch1.text = "Ch177 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch176 Hit Count: " + this.ch0.value;
 	},
-	Reg157 : function(sig) {
+	Reg173 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2653,7 +2823,7 @@ var Registers = {
 		this.ch1.text = "Ch181 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch180 Hit Count: " + this.ch0.value;
 	},
-	Reg158 : function(sig) {
+	Reg174 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2663,7 +2833,7 @@ var Registers = {
 		this.ch1.text = "Ch185 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch184 Hit Count: " + this.ch0.value;
 	},
-	Reg159 : function(sig) {
+	Reg175 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2673,7 +2843,7 @@ var Registers = {
 		this.ch1.text = "Ch189 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch188 Hit Count: " + this.ch0.value;
 	},
-	Reg160 : function(sig) {
+	Reg176 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2683,7 +2853,7 @@ var Registers = {
 		this.ch1.text = "Ch193 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch192 Hit Count: " + this.ch0.value;
 	},
-	Reg161 : function(sig) {
+	Reg177 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2693,7 +2863,7 @@ var Registers = {
 		this.ch1.text = "Ch197 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch196 Hit Count: " + this.ch0.value;
 	},
-	Reg162 : function(sig) {
+	Reg178 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2703,7 +2873,7 @@ var Registers = {
 		this.ch1.text = "Ch201 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch200 Hit Count: " + this.ch0.value;
 	},
-	Reg163 : function(sig) {
+	Reg179 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2713,7 +2883,7 @@ var Registers = {
 		this.ch1.text = "Ch205 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch204 Hit Count: " + this.ch0.value;
 	},
-	Reg164 : function(sig) {
+	Reg180 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2723,7 +2893,7 @@ var Registers = {
 		this.ch1.text = "Ch209 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch208 Hit Count: " + this.ch0.value;
 	},
-	Reg165 : function(sig) {
+	Reg181 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2733,7 +2903,7 @@ var Registers = {
 		this.ch1.text = "Ch213 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch212 Hit Count: " + this.ch0.value;
 	},
-	Reg166 : function(sig) {
+	Reg182 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2743,7 +2913,7 @@ var Registers = {
 		this.ch1.text = "Ch217 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch216 Hit Count: " + this.ch0.value;
 	},
-	Reg167 : function(sig) {
+	Reg183 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2753,7 +2923,7 @@ var Registers = {
 		this.ch1.text = "Ch221 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch220 Hit Count: " + this.ch0.value;
 	},
-	Reg168 : function(sig) {
+	Reg184 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2763,7 +2933,7 @@ var Registers = {
 		this.ch1.text = "Ch225 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch224 Hit Count: " + this.ch0.value;
 	},
-	Reg169 : function(sig) {
+	Reg185 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2773,7 +2943,7 @@ var Registers = {
 		this.ch1.text = "Ch229 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch228 Hit Count: " + this.ch0.value;
 	},
-	Reg170 : function(sig) {
+	Reg186 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2783,7 +2953,7 @@ var Registers = {
 		this.ch1.text = "Ch233 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch232 Hit Count: " + this.ch0.value;
 	},
-	Reg171 : function(sig) {
+	Reg187 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2793,7 +2963,7 @@ var Registers = {
 		this.ch1.text = "Ch237 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch236 Hit Count: " + this.ch0.value;
 	},
-	Reg172 : function(sig) {
+	Reg188 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2803,7 +2973,7 @@ var Registers = {
 		this.ch1.text = "Ch241 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch240 Hit Count: " + this.ch0.value;
 	},
-	Reg173 : function(sig) {
+	Reg189 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2813,7 +2983,7 @@ var Registers = {
 		this.ch1.text = "Ch245 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch244 Hit Count: " + this.ch0.value;
 	},
-	Reg174 : function(sig) {
+	Reg190 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
@@ -2823,7 +2993,7 @@ var Registers = {
 		this.ch1.text = "Ch249 Hit Count: " + this.ch1.value;
 		this.ch0.text = "Ch248 Hit Count: " + this.ch0.value;
 	},
-	Reg175 : function(sig) {
+	Reg191 : function(sig) {
 		this.ch3 = {value:(sig>>24)&0xff,type:'input'};
 		this.ch2 = {value:(sig>>16)&0xff,type:'input'};
 		this.ch1 = {value:(sig>>8)&0xff,type:'input'};
