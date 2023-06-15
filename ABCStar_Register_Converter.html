@@ -271,8 +271,8 @@ var Registers = {
 		this.EnCount.text = "Counters at the end of the L0Buffer: " + this.EnCount.options[this.EnCount.value];
 		this.MaskHPR.text = "Enable preventing HPR packets from being transmitted when the LCB link status changes: " + this.MaskHPR.options[this.MaskHPR.value];
 		this.TestPattEn.text = "Test pulse pattern editing: " + this.TestPattEn.options[this.TestPattEn.value];
-		this.TestPatt1.text = "Unmask channels test pulse pattern: " + bin_string(this.TestPatt1.value,4);
-		this.TestPatt2.text = "Masked channels test pulse pattern: " + bin_string(this.TestPatt2.value,4);
+		this.TestPatt2.text = "Unmask channels test pulse pattern: " + bin_string(this.TestPatt1.value,4);
+		this.TestPatt1.text = "Masked channels test pulse pattern: " + bin_string(this.TestPatt2.value,4);
 	},
 	Reg33: function(sig) {
 		this.ReadoutTimeoutEnable = {value:(sig>>31)&1,type:'select',options:{0:'disabled',1:'enabled'}};
