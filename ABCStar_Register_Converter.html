@@ -372,7 +372,7 @@ var Registers = {
         this.ADCS3SEU = {value:(sig>>5)&1,type:'binput',n:1};
         this.ADCS2SEU = {value:(sig>>8)&1,type:'binput',n:1};
 		this.ADCS1SEU = {value:(sig>>7)&1,type:'binput',n:1};
-        this.unused2 = {value:(sig>>2)&0x1f,type:'unused'};
+        this.unused2 = {value:(sig>>2)&0x3f,type:'unused'};
         this.CFG1SEU = {value:(sig>>1)&1,type:'binput',n:1};
 		this.CFG0SEU = {value:(sig>>0)&1,type:'binput',n:1};	
 		/*
