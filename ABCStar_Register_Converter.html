@@ -1,5 +1,4 @@
 
-
 <html>
 <head>
 <meta charset="utf-8"/>
@@ -168,7 +167,7 @@ var Registers = {
         this.D_LOW = "Lower the output voltage of the analog LDO" + ((this.D_LOW.value==this.D_LOW.checked)?'Yes':'No');
         this.d_s.text = "Regulator D output voltage: " + this.d_s.value;
         this.a_en_ctrl.text = "Regulator A output control: " + this.a_en_ctrl.options[this.a_en_ctrl.value];
-        this.A_LOW = "Lower the output voltage of the analog LDO" + ((this.A_LOW.value==this.A_LOW.checked)?'Yes':'No');
+        this.A_LOW.text = "Lower the output voltage of the analog LDO" + ((this.A_LOW.value==this.A_LOW.checked)?'Yes':'No');
         this.a_s.text = "Regulator A output voltage: " + this.a_s.value;
         this.btmux_d.text = "MUX output: " + this.btmux_d.options[this.btmux_d.value];
 		this.btmux.text = "MUX output voltage: " + this.btmux.value;
@@ -293,6 +292,7 @@ var Registers = {
         this.DetMode.text = "Detection mode: " + this.DetMode.options[this.DetMode.value];
         this.DTESTOUTSEL.text = "Monitor internal signals: " + bin_string(this.DTESTOUTSEL.value,7);
 	},
+
     /*
 	Reg34: function(sig) {
 		this.BCoffset = {value:(sig>>24)&0xff,type:'input'};
@@ -371,7 +371,7 @@ var Registers = {
         this.ADCS3SEU = {value:(sig>>5)&1,type:'binput',n:1};
         this.ADCS2SEU = {value:(sig>>8)&1,type:'binput',n:1};
 		this.ADCS1SEU = {value:(sig>>7)&1,type:'binput',n:1};
-        this.unused2 = {value:(sig>>2)&1,type:'unused'};
+        this.unused2 = {value:(sig>>2)&0x1f,type:'unused'};
         this.CFG1SEU = {value:(sig>>1)&1,type:'binput',n:1};
 		this.CFG0SEU = {value:(sig>>0)&1,type:'binput',n:1};	
 		/*
