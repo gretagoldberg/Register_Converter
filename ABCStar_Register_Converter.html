@@ -313,7 +313,7 @@ var Registers = {
         this.MCEn.text = "Maximum cluster editing: " + this.MCEn.options[this.MCEn.value];
         this.MC.text = "Maximum clusters (if editing enabled): " + this.MC.value;
         this.DetMode.text = "Detection mode: " + this.DetMode.options[this.DetMode.value];
-        this.DTESTOUTSEL.text = "Digital test output: " + bin_string(parseInt(this.DTESTOUTSEL.value,2),7);
+        this.DTESTOUTSEL.text = "Digital test output: " + parseInt(bin_string(this.DTESTOUTSEL.value,7),2);
 	},
 
     /*
@@ -3044,6 +3044,7 @@ function RegisterConvert() {
 	return reg;
 }
 
+/*
 //Convert hex signal to dec
 function SignalConvert() {
 	var sig = document.getElementByID('sig').value;
@@ -3060,6 +3061,7 @@ function SignalConvert() {
 	}
 	return signalss;
 }
+*/
 
 //Create value fields for current register and initialize with defaults
 function Initialize() {
