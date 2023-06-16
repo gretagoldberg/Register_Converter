@@ -147,30 +147,30 @@ var Registers = {
         */
 	},
 	Reg3: function(sig) {
-        this.EN_out_decoder = {value:(sig>>28)&0xf,type:'binput',n:16};
+        this.EN_out_decoder = {value:(sig>>28)&0xf,type:'select',options:{0:'EN_LCB_SCmd_Err',1:'EN_LCB_ErrCnt_Ovfl',2:"EN_LCB_Decode_Err",3:"EN_LCB_Locked",4:"EN_PRFIFO_OVFL",5:"EN_PRFIFO_AlmostFull",6:"EN_PRFIFO_Empty",7:"EN_LPFIFO_OVFL",8:"EN_LPFIFO_AlmostFull",9:"EN_LPFIFO_Empty",10:"EN_RegFIFO_OVERFL",11:"EN_RegFIFO_AlmostFull",12:"EN_RegFIFO_Empty",13:"EN_Cluster_OVFL",14:"EN_Cluster_AlmostFull",15:"EN_Cluster_empty"}};
         this.d_en_ctrl = {value:(sig>>27)&1,type:'select',options:{0:'maximum voltage',1:'enable tuning'}};
-        this.D_LOW = {value:(sig>>26)&1,type:'checkbox',checked:1,unchecked:0};
+        this.D_LOW = {value:(sig>>26)&1,type:'select',options:{0:"yes",1:"no"}};
         this.d_s = {value:(sig>>21)&0x1f,type:'input'};
         this.a_en_ctrl = {value:(sig>>20)&1,type:'select',options:{0:'maximum voltage',1:'enable tuning'}};
-        this.A_LOW = {value:(sig>>19)&1,type:'checkbox',checked:1,unchecked:0};
+        this.A_LOW = {value:(sig>>19)&1,type:'select',options:{0:'maximum voltage',1:'enable tuning'}};
         this.a_s = {value:(sig>>14)&0x1f,type:'input'};
         this.btmux_d = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-        this.btmux = {value:(sig>>9)&0xf,type:'input'};
+        this.btmux = {value:(sig>>9)&0xf,type:'select',options:{0:"TEST_TRIM_DAC",1:"TEST_VR",2:"TEST_IR",3:"TEST_R8B",4:"VCD",5:"VB",6:"VBG",7:"CALLINE",8:"TEST_THDAC",9:"VTHTEST",10:"VTHTESTREF",11:"GNDA"}};
         this.ADC_en = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.ADC_ch3 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch2 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch1 = {value:(sig>>5)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch0 = {value:(sig>>4)&1,type:'select',options:{0:'disabled',1:'enabled'}};
         this.ADC_bias = {value:(sig>>0)&0xf,type:'input'};
-        this.EN_out_decoder.text = "Configures the flagBit in the 68-bit packets: " + bin_string(this.EN_out_decoder.value,16);
-        this.d_en_ctrl.text = "Regulator D output control: " + this.d_en_ctrl.options[this.d_en_ctrl.value];
-        this.D_LOW.text = "Lower the output voltage of the analog LDO " + ((this.D_LOW.value==this.D_LOW.checked)?'Yes':'No');
-        this.d_s.text = "Regulator D output voltage: " + this.d_s.value;
-        this.a_en_ctrl.text = "Regulator A output control: " + this.a_en_ctrl.options[this.a_en_ctrl.value];
-        this.A_LOW.text = "Lower the output voltage of the analog LDO " + ((this.A_LOW.value==this.A_LOW.checked)?'Yes':'No');
-        this.a_s.text = "Regulator A output voltage: " + this.a_s.value;
+        this.EN_out_decoder.text = "Configures the flagBit in the 68-bit packets: " + this.EN_out_decoder.options[this.EN_out_decoder.value];
+        this.d_en_ctrl.text = "Digital LDO: " + this.d_en_ctrl.options[this.d_en_ctrl.value];
+        this.D_LOW.text = "Lower the output voltage of the analog LDO " + this.D_LOW.options[this.D_LOW.value];
+        this.d_s.text = "Digital LDO: " + this.d_s.value;
+        this.a_en_ctrl.text = "Analog LDO: " + this.a_en_ctrl.options[this.a_en_ctrl.value];
+        this.A_LOW.text = "Lower the output voltage of the analog LDO " + this.A_LOW.options[this.A_LOW.value];
+        this.a_s.text = "Analog LDO: " + this.a_s.value;
         this.btmux_d.text = "MUX output: " + this.btmux_d.options[this.btmux_d.value];
-		this.btmux.text = "MUX output voltage: " + this.btmux.value;
+		this.btmux.text = "MUX output: " + this.btmux.options[this.btmux.value];
         this.ADC_en.text = "ADC operation: " + this.ADC_en.options[this.ADC_en.value];
         this.ADC_ch3.text = "ADC Ch 3: " + this.ADC_ch3.options[this.ADC_ch3.value];
 		this.ADC_ch2.text = "ADC Ch 2: " + this.ADC_ch2.options[this.ADC_ch2.value];
@@ -291,7 +291,7 @@ var Registers = {
         this.MCEn.text = "Maximum cluster editing: " + this.MCEn.options[this.MCEn.value];
         this.MC.text = "Maximum clusters (if editing enabled): " + this.MC.value;
         this.DetMode.text = "Detection mode: " + this.DetMode.options[this.DetMode.value];
-        this.DTESTOUTSEL.text = "Monitor internal signals: " + bin_string(this.DTESTOUTSEL.value,7);
+        this.DTESTOUTSEL.text = "Digital test output: " + bin_string(parseInt(this.DTESTOUTSEL.value,2),7);
 	},
 
     /*
@@ -501,7 +501,7 @@ var Registers = {
         this.ADCMeasurementReady = {value:(sig>>26)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_dat = {value:(sig>>14)&0xfff,type:'input'};
         this.btmux_d = {value:(sig>>13)&1,type:'select',options:{0:'disabled',1:'enabled'}};
-        this.btmux = {value:(sig>>9)&0xf,type:'input'};
+        this.btmux = {value:(sig>>9)&0xf,type:'select',options:{0:"TEST_TRIM_DAC",1:"TEST_VR",2:"TEST_IR",3:"TEST_R8B",4:"VCD",5:"VB",6:"VBG",7:"CALLINE",8:"TEST_THDAC",9:"VTHTEST",10:"VTHTESTREF",11:"GNDA"}};
 		this.ADC_en = {value:(sig>>8)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch3 = {value:(sig>>7)&1,type:'select',options:{0:'disabled',1:'enabled'}};
 		this.ADC_ch2 = {value:(sig>>6)&1,type:'select',options:{0:'disabled',1:'enabled'}};
@@ -516,7 +516,7 @@ var Registers = {
         this.ADCMeasurementReady.text = "New ADC sample is ready: " + this.ADCMeasurementReady.options[this.ADCMeasurementReady.value];
         this.ADC_dat.text = "ADC data: " + this.ADC_dat.value;
         this.btmux_d.text = "MUX output: " + this.btmux_d.options[this.btmux_d.value];
-		this.btmux.text = "MUX output voltage: " + this.btmux.value;
+		this.btmux.text = "MUX output: " + this.btmux.options[this.btmux.value];
 		this.ADC_en.text = "ADC: " + this.ADC_en.options[this.ADC_en.value];
 		this.ADC_ch3.text = "ADC Ch3: " + this.ADC_ch3.options[this.ADC_ch3.value];
 		this.ADC_ch2.text = "ADC Ch2: " + this.ADC_ch2.options[this.ADC_ch2.value];	
