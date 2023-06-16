@@ -313,7 +313,32 @@ var Registers = {
         this.MCEn.text = "Maximum cluster editing: " + this.MCEn.options[this.MCEn.value];
         this.MC.text = "Maximum clusters (if editing enabled): " + this.MC.value;
         this.DetMode.text = "Detection mode: " + this.DetMode.options[this.DetMode.value];
-        this.DTESTOUTSEL.text = "Digital test output: " + parseInt(bin_string(this.DTESTOUTSEL.value,7),2);
+        var sig = document.getElementById('sig').value;
+		var format = document.getElementbyID('format').value;
+		if (format=="16") {
+			this.DTESTOUTSEL.text = "Digital test output: " + parseInt(bin_string(this.DTESTOUTSEL.value,7),16)
+		} else if (format=="2") {
+			this.DTESTOUTSEL.text = "Digital test output: " + parseInt(bin_string(this.DTESTOUTSEL.value,7),2)
+		} else {
+				this.DTESTOUTSEL.text = "Digital test output: " + bin_string(this.DTESTOUTSEL.value)
+			}
+	/*
+	function RegisterConvert() {
+	var register = document.getElementById('register').value;
+	var format = document.getElementById('regformat').value;
+	var reg = "Reg";
+	if (format=="dec") {
+		reg += register;
+	} else if (format=="hex"){
+		var hex = hexToDec(register)
+		reg += hex.toString();
+	} else if (format=="name"){
+		var name = RegisterNames.indexOf(register)
+		reg += name.toString();
+	}
+	return reg;
+	*/
+		
 	},
 
     /*
