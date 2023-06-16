@@ -3044,6 +3044,23 @@ function RegisterConvert() {
 	return reg;
 }
 
+//Convert hex signal to dec
+function SignalConvert() {
+	var sig = document.getElementByID('sig').value;
+	var format = document.getElementById('format').value;
+	var signalss = ""
+	if (format=="dec") {
+		signalss += register;
+	} else if (format=="hex"){
+		var hex = hexToDec(register)
+		signalss += hex.toString();
+	} else if (format=="name"){
+		var name = RegisterNames.indexOf(register)
+		signalss += name.toString();
+	}
+	return reg;
+}
+
 //Create value fields for current register and initialize with defaults
 function Initialize() {
 	document.getElementById('testdiv').innerHTML="";
