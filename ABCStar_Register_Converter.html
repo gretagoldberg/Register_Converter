@@ -291,7 +291,7 @@ var Registers = {
         this.MCEn.text = "Maximum cluster editing: " + this.MCEn.options[this.MCEn.value];
         this.MC.text = "Maximum clusters (if editing enabled): " + this.MC.value;
         this.DetMode.text = "Detection mode: " + this.DetMode.options[this.DetMode.value];
-        this.DTESTOUTSEL.text = "Digital test output: " + bin_string(this.DTESTOUTSEL.value,7);
+        this.DTESTOUTSEL.text = "Digital test output: " + bin_string(parseInt(this.DTESTOUTSEL.value,2),7);
 	},
 
     /*
