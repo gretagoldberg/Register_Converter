@@ -77,6 +77,14 @@ window.onload = function() {
 //Maximum signal (for length testing)
 var max_test = 0xffffffff;
 
+//names of registers
+var RegisterNames = [
+	"SEU 1", "SEU 2", "empty1", "FrameRaw", "LCBerr", "ADC Status", "Status", "ABC Flow Control 1", "ABC Flow Control 2","ABC Flow Control 3",
+	"Readout Request Queue Occupancy", "empty2", "empty3","empty4","empty5","HPR","Pulse","Addressing","empty6","empty7","empty8","empty9","empty10",
+	"empty11","empty12","empty13","empty14","empty15","empty16","empty17","empty18","empty19","Delay1","Delay2","Delay3","PLL","empty20","empty21",
+	"DRV1","DRV2","ICenable","OPmode","OPmodeC","Cfg1","Cfg2","ExtRst","ExtRstC","ErrCfg","ADCcfg"
+]
+
 //Namespace of register constructors
 var Registers = {
 
@@ -551,10 +559,27 @@ Reg48 : function(sig) {
 }
 };
 
+//Convert hex/name register to dec
+function RegisterConvert() {
+	var register = document.getElementById('register').value;
+	var format = document.getElementById('regformat').value;
+	var reg = "Reg";
+	if (format=="dec") {
+		reg += register;
+	} else if (format=="hex"){
+		var hex = hexToDec(register)
+		reg += hex.toString();
+	} else if (format=="name"){
+		var name = RegisterNames.indexOf(register)
+		reg += name.toString();
+	}
+	return reg;
+}
+
 //Create value fields for current register and initialize with defaults
 function Initialize() {
 	document.getElementById('testdiv').innerHTML="";
-	var reg = 'Reg' + document.getElementById('register').value;
+	var reg = RegisterConvert();
 	var def_sig = new Registers[reg](defaults[reg]); // Create new instance of register with its default signal
 	for (x in def_sig) {  // Create value fields for the register, and initialize with default values
 		if (def_sig[x].type!="unused") {
@@ -598,7 +623,7 @@ function Initialize() {
 function Convert() {
 	Initialize();
 	var format = document.getElementById('format').value;
-	var reg = 'Reg' + document.getElementById('register').value;
+	var reg = RegisterConvert();
 	var sig = parseInt(document.getElementById('sig').value,format);
 	if ((sig<0) || (sig>max_test)) {alert('Invalid entry'); return;}
 	output = new Registers[reg](sig); // New instance of register using signal in field
@@ -621,8 +646,7 @@ function Convert() {
 
 //Convert info to signal
 function Convert2() {
-	var reg_id = document.getElementById('register').value;
-	var reg = 'Reg' + reg_id;
+	var reg = RegisterConvert();
 	var s = new Registers[reg](defaults[reg]); // new instance of selected register	
 
 	for (var x in s) { // loop through parameters of register
@@ -669,8 +693,7 @@ function toText() {
 	document.getElementById('textdiv').innerHTML="";
 
 	var format = document.getElementById('format').value;
-	var reg_id = document.getElementById('register').value;
-	var reg = 'Reg' + reg_id;
+	var reg = RegisterConvert();
 	var temp_sig = parseInt(document.getElementById('sig').value,format); // Store value in signal field
 	Convert2(); // Temporarily place value in signal field corresponding to value fields
 
@@ -753,6 +776,11 @@ function hex_string(a,n) {
 	return (a+temp).toString(16).substr(-n).toUpperCase();	
 }
 
+//Convert hex number "a" to decimal
+function hexToDec(a) {
+  return parseInt(a, 16);
+}
+
 //Select option with value "value" from dropdown menu "elmnt"
 function selectItemByValue(element, value){
 
@@ -777,7 +805,13 @@ function selectItemByValue(element, value){
 
 </div>
 Register:</br>
-<input id='register'></input> <button onclick='Initialize();'>Select register</button></br>
+<input id='register'></input></br>
+<select id='regformat'>
+<option value="hex">Hexadecimal</option>
+<option value="dec">Decimal</option>
+<option value="name">Name (exact)</option>
+</select>
+<button onclick='Initialize();'>Select Register</button></br>
 Signal (32 bit): </br>
 <input id='sig' size='32'></input></br>
 <select id='format'>
